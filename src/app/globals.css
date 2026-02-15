@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  @apply bg-ink-950 text-white font-display antialiased;
+  min-height: 100vh;
+}
+
+.bg-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, transparent 0),
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+  background-size: 48px 48px, 12px 12px;
+}
+
+.card {
+  @apply rounded-2xl border border-ink-700/60 bg-ink-900/80 shadow-glow;
+}
+
+.input {
+  @apply w-full rounded-xl border border-ink-700 bg-ink-950 px-4 py-3 text-white placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30;
+}
+
+.button {
+  @apply inline-flex items-center justify-center rounded-full border border-ink-600 bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:border-accent hover:text-accent;
+}
+
+.button-primary {
+  @apply border-transparent bg-accent text-ink-950 hover:bg-white hover:text-ink-950;
+}
+
+.tag {
+  @apply rounded-full border border-ink-700 px-3 py-1 text-xs uppercase tracking-[0.2em] text-muted;
+}
