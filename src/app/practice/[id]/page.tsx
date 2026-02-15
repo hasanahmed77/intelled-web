@@ -1,19 +1,22 @@
-import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { fetchWorksheetWithQuestions } from "@/lib/worksheet/data";
+import { notFound } from "next/navigation";
 import { WorksheetAttemptForm } from "@/components/worksheet-attempt-form";
 
 export default async function WorksheetDetailPage({
   params
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const user = await requireUser(`/practice/${params.id}`);
-  const worksheet = await fetchWorksheetWithQuestions(user.id, params.id);
+  const { id } = await params;
+  const user = await requireUser(`/practice/${id}`);
+  const worksheet = await fetchWorksheetWithQuestions(user.id, id);
 
   if (!worksheet) {
     notFound();
   }
+
+  const questions = (worksheet.questions as { id: string; prompt: string; answer: string; feedback: string; order: number }[] | null) ?? [];
 
   return (
     <div className="space-y-8">
@@ -24,9 +27,7 @@ export default async function WorksheetDetailPage({
       </div>
       <WorksheetAttemptForm
         worksheetId={worksheet.id}
-        questions={[...(worksheet.worksheet_questions ?? [])].sort(
-          (a, b) => a.order_index - b.order_index
-        )}
+        questions={[...questions].sort((a, b) => a.order - b.order)}
       />
     </div>
   );

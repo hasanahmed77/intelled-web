@@ -78,28 +78,27 @@ const ANSWERS: Record<Difficulty, string[]> = {
   ]
 };
 
-export function generateWorksheets(topic: string, difficulty: Difficulty) {
+export function generateWorksheet(topic: string, difficulty: Difficulty) {
   const prompts = difficulty === "easy" ? EASY : difficulty === "medium" ? MEDIUM : HARD;
   const answers = ANSWERS[difficulty];
 
-  const worksheets: GeneratedWorksheet[] = Array.from({ length: 10 }, (_, index) => {
-    const questions = prompts.map((prompt, qIndex) => {
-      const answer = answers[qIndex] ?? "";
-      return {
-        prompt: `${prompt}`,
-        answer,
-        feedback: `Review the differentiation rules applied to: ${prompt}.`,
-        order: qIndex + 1
-      };
-    });
-
+  const questions = prompts.map((prompt, qIndex) => {
+    const answer = answers[qIndex] ?? "";
     return {
-      title: `Worksheet ${index + 1}`,
-      topic,
-      difficulty,
-      questions
+      id: crypto.randomUUID(),
+      prompt: `${prompt}`,
+      answer,
+      feedback: `Review the differentiation rules applied to: ${prompt}.`,
+      order: qIndex + 1
     };
   });
 
-  return worksheets;
+  const worksheet: GeneratedWorksheet = {
+    title: "Worksheet",
+    topic,
+    difficulty,
+    questions
+  };
+
+  return worksheet;
 }

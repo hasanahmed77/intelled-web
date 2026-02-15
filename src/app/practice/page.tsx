@@ -11,7 +11,7 @@ export default async function PracticePage() {
     <div className="space-y-10">
       <div className="space-y-2">
         <span className="tag">Practice</span>
-        <h1 className="text-3xl font-semibold">Generate your next worksheet set.</h1>
+        <h1 className="text-3xl font-semibold">Generate your next worksheet.</h1>
         <p className="text-muted">
           Enter a topic and choose a difficulty. Auto uses your performance history to
           tune the worksheet level.

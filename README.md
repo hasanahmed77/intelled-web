@@ -30,4 +30,8 @@ npm run dev
   - 80+ → hard
   - 50-79 → medium
   - below 50 → easy
+
+## Schema note
+
+This version stores worksheet questions and attempt answers as JSONB on the `worksheets` and `worksheet_attempts` tables (no separate questions table).
 # intelled-web

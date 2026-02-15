@@ -7,7 +7,7 @@ type Question = {
   id: string;
   prompt: string;
   feedback: string;
-  order_index: number;
+  order: number;
 };
 
 type Result = {

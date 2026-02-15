@@ -12,11 +12,11 @@ export async function createSupabaseServerClient() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: { path?: string; maxAge?: number }) {
-          cookieStore.set({ name, value, ...options });
+        set() {
+          // Cookies are read-only in Server Components.
         },
-        remove(name: string, options: { path?: string }) {
-          cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+        remove() {
+          // Cookies are read-only in Server Components.
         }
       }
     }

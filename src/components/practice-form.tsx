@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { generateWorksheetsAction } from "@/app/actions/worksheet";
 
 export function PracticeForm() {
   const [state, setState] = useState<{ ok?: boolean; error?: string }>({});
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <form
@@ -14,8 +16,21 @@ export function PracticeForm() {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
         startTransition(async () => {
-          const result = await generateWorksheetsAction(formData);
-          setState(result);
+          try {
+            const result = await generateWorksheetsAction(formData);
+            setState(result);
+            if (result.ok && result.worksheetId) {
+              router.push(`/practice/${result.worksheetId}`);
+            }
+          } catch (error) {
+            setState({
+              ok: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to generate worksheet."
+            });
+          }
         });
       }}
     >
@@ -42,7 +57,7 @@ export function PracticeForm() {
         <p className="text-sm text-accent">Generated. Scroll down to view worksheets.</p>
       ) : null}
       <button className="button button-primary" type="submit" disabled={isPending}>
-        {isPending ? "Generating..." : "Generate 10 worksheets"}
+        {isPending ? "Generating..." : "Generate worksheet"}
       </button>
     </form>
   );

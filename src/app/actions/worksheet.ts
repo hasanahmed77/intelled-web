@@ -2,13 +2,13 @@
 
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
-import { generateWorksheets } from "@/lib/worksheet/generator";
+import { generateWorksheet } from "@/lib/worksheet/generator";
 import type { DifficultySelection } from "@/lib/worksheet/types";
 import {
   createAttempt,
   fetchWorksheetWithQuestions,
   getPerformanceDifficulty,
-  insertWorksheets
+  insertWorksheet
 } from "@/lib/worksheet/data";
 
 const generateSchema = z.object({
@@ -33,10 +33,16 @@ export async function generateWorksheetsAction(formData: FormData) {
       ? await getPerformanceDifficulty(user.id)
       : (difficulty as Exclude<DifficultySelection, "auto">);
 
-  const worksheets = generateWorksheets(topic, resolvedDifficulty);
-  await insertWorksheets(user.id, worksheets);
-
-  return { ok: true };
+  try {
+    const worksheet = generateWorksheet(topic, resolvedDifficulty);
+    const inserted = await insertWorksheet(user.id, worksheet);
+    return { ok: true, worksheetId: inserted.id };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to generate worksheet."
+    };
+  }
 }
 
 const submitSchema = z.object({
@@ -62,19 +68,20 @@ export async function submitAttemptAction(payload: {
   }
 
   const worksheet = await fetchWorksheetWithQuestions(user.id, payload.worksheetId);
-  if (!worksheet || !worksheet.worksheet_questions) {
+  if (!worksheet || !worksheet.questions) {
     return { ok: false, error: "Worksheet not found." };
   }
 
   const answersWithKeys = parsed.data.answers.map((answer) => {
-    const question = worksheet.worksheet_questions.find(
+    const question = (worksheet.questions as { id: string; prompt: string; answer: string; feedback: string }[]).find(
       (item) => item.id === answer.questionId
     );
     return {
       questionId: answer.questionId,
       answer: answer.answer,
       correctAnswer: question?.answer ?? "",
-      feedback: question?.feedback ?? "Review the working and try again."
+      feedback: question?.feedback ?? "Review the working and try again.",
+      prompt: question?.prompt ?? ""
     };
   });
 
