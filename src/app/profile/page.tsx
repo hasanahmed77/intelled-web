@@ -42,8 +42,12 @@ export default async function ProfilePage() {
           {attempts.map((attempt) => (
             <div key={attempt.id} className="card flex flex-col gap-2 p-5 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-sm text-muted">{attempt.worksheets?.topic ?? ""}</p>
-                <p className="text-lg font-semibold">{attempt.worksheets?.title ?? "Worksheet"}</p>
+                <p className="text-sm text-muted">
+                  {attempt.worksheets?.[0]?.topic ?? ""}
+                </p>
+                <p className="text-lg font-semibold">
+                  {attempt.worksheets?.[0]?.title ?? "Worksheet"}
+                </p>
               </div>
               <div className="text-sm text-muted">
                 <p>Score: {attempt.score}%</p>
