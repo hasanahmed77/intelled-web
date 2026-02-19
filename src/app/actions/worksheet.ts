@@ -100,7 +100,8 @@ export async function submitAttemptAction(payload: {
       prompt: item.prompt,
       userAnswer: item.userAnswer,
       feedback: item.feedback,
-      isCorrect: item.isCorrect
+      isCorrect: item.isCorrect,
+      correctAnswer: item.correctAnswer
     }))
   });
 

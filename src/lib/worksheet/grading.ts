@@ -26,7 +26,8 @@ export async function gradeAnswers(params: {
       prompt: q.prompt,
       userAnswer: q.userAnswer,
       feedback: ai.feedback,
-      isCorrect: ai.isCorrect
+      isCorrect: ai.isCorrect,
+      correctAnswer: ai.correctAnswer
     };
   });
 }

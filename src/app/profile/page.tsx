@@ -1,8 +1,16 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { fetchAttempts, fetchWorksheets } from "@/lib/worksheet/data";
 
+function toTitleCase(value: string) {
+  return value.replace(/\w\S*/g, (word) => {
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
+}
+
 export default async function ProfilePage() {
   const user = await requireUser("/profile");
+  const username = (user.email ?? "user").split("@")[0];
   const [attempts, worksheets] = await Promise.all([
     fetchAttempts(user.id),
     fetchWorksheets(user.id)
@@ -17,7 +25,7 @@ export default async function ProfilePage() {
     <div className="space-y-10">
       <div className="space-y-2">
         <span className="tag">Profile</span>
-        <h1 className="text-3xl font-semibold">Your progress</h1>
+        <h1 className="text-3xl font-semibold">{toTitleCase(username)}</h1>
         <p className="text-muted">Track how your worksheets are improving over time.</p>
       </div>
 
@@ -37,26 +45,33 @@ export default async function ProfilePage() {
       </div>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Recent attempts</h2>
-        <div className="grid gap-4">
-          {attempts.map((attempt) => (
-            <div key={attempt.id} className="card flex flex-col gap-2 p-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm text-muted">
-                  {attempt.worksheets?.[0]?.topic ?? ""}
-                </p>
-                <p className="text-lg font-semibold">
-                  {attempt.worksheets?.[0]?.title ?? "Worksheet"}
-                </p>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Recent worksheets</h2>
+          <span className="text-sm text-muted">{worksheets.length} total</span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {worksheets.map((worksheet) => (
+            <Link
+              key={worksheet.id}
+              className="card p-5 transition hover:border-accent"
+              href={`/practice/${worksheet.id}`}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">{toTitleCase(worksheet.title)}</h3>
+                <span className="text-xs uppercase tracking-[0.2em] text-muted">
+                  {worksheet.difficulty}
+                </span>
               </div>
-              <div className="text-sm text-muted">
-                <p>Score: {attempt.score}%</p>
-                <p>Difficulty: {attempt.difficulty_used}</p>
-              </div>
-            </div>
+              <p className="mt-2 text-sm text-muted">{worksheet.topic}</p>
+              <p className="mt-4 text-xs text-muted">
+                Created {new Date(worksheet.created_at).toLocaleDateString()}
+              </p>
+            </Link>
           ))}
-          {attempts.length === 0 ? (
-            <div className="card p-6 text-sm text-muted">No attempts yet.</div>
+          {worksheets.length === 0 ? (
+            <div className="card p-6 text-sm text-muted">
+              No worksheets yet. Generate your first worksheet from Practice.
+            </div>
           ) : null}
         </div>
       </section>

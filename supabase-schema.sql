@@ -56,12 +56,41 @@ create policy "Worksheets are viewable by owners" on worksheets
 create policy "Worksheets are insertable by owners" on worksheets
   for insert with check (auth.uid() = user_id);
 
+create policy "Worksheets are deletable by owners" on worksheets
+  for delete using (auth.uid() = user_id);
+
 -- Attempts policies
 create policy "Attempts are viewable by owners" on worksheet_attempts
   for select using (auth.uid() = user_id);
 
 create policy "Attempts are insertable by owners" on worksheet_attempts
   for insert with check (auth.uid() = user_id);
+
+-- Keep only the latest 10 worksheets per user
+create or replace function public.keep_only_last_10_worksheets()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from public.worksheets
+  where id in (
+    select id
+    from public.worksheets
+    where user_id = new.user_id
+    order by created_at desc, id desc
+    offset 10
+  );
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_keep_last_10_worksheets on public.worksheets;
+create trigger trg_keep_last_10_worksheets
+after insert on public.worksheets
+for each row execute function public.keep_only_last_10_worksheets();
 
 -- Optional: keep profiles in sync
 create or replace function public.handle_new_user()

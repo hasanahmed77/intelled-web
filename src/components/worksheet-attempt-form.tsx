@@ -14,6 +14,7 @@ type Result = {
   index: number;
   isCorrect: boolean;
   feedback: string;
+  correctAnswer: string;
 };
 
 export function WorksheetAttemptForm({
@@ -80,15 +81,30 @@ export function WorksheetAttemptForm({
             />
             {result ? (
               <div className="rounded-xl border border-ink-700 bg-ink-950/60 p-4 text-sm">
-                <p className={result.details.find((d) => d.index === question.order)?.isCorrect ? "text-green-400" : "text-red-400"}>
-                  {result.details.find((d) => d.index === question.order)?.isCorrect
-                    ? "Correct"
-                    : "Needs work"}
-                </p>
-                <p className="mt-2 text-muted">
-                  {result.details.find((d) => d.index === question.order)?.feedback ??
-                    "Review the concept and try again."}
-                </p>
+                {(() => {
+                  const detail = result.details.find((d) => d.index === question.order);
+                  if (!detail) return null;
+                  const feedback = detail.feedback.trim();
+                  const normalizedFeedback = feedback.toLowerCase();
+                  const showFeedback =
+                    feedback.length > 0 && !(detail.isCorrect && normalizedFeedback === "correct.");
+                  const showCorrectAnswer =
+                    !detail.isCorrect && detail.correctAnswer.trim().length > 0;
+
+                  return (
+                    <>
+                      <p className={detail.isCorrect ? "text-green-400" : "text-red-400"}>
+                        {detail.isCorrect ? "Correct" : "Needs work"}
+                      </p>
+                      {showFeedback ? <p className="mt-2 text-muted">{feedback}</p> : null}
+                      {showCorrectAnswer ? (
+                        <p className="mt-2 text-muted">
+                          Correct answer: {detail.correctAnswer}
+                        </p>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </div>
             ) : null}
           </div>

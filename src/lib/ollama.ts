@@ -5,7 +5,6 @@ const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://127.0.0.1:11434";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:0.5b";
 
 const worksheetSchema = z.object({
-  title: z.string().min(1),
   questions: z.array(
     z.object({
       prompt: z.preprocess((val) => String(val ?? "").trim(), z.string().min(1))
@@ -18,7 +17,8 @@ const gradingSchema = z.object({
     z.object({
       index: z.number().int().min(1),
       isCorrect: z.boolean(),
-      feedback: z.preprocess((val) => String(val ?? "").trim(), z.string().min(1))
+      feedback: z.preprocess((val) => String(val ?? "").trim(), z.string()),
+      correctAnswer: z.preprocess((val) => String(val ?? "").trim(), z.string())
     })
   )
 });
@@ -59,7 +59,6 @@ export async function generateWorksheetWithOllama(
 ): Promise<GeneratedWorksheet> {
   const prompt = `You are generating a worksheet on any topic. Return ONLY valid JSON that matches this schema:
 {
-  "title": "string",
   "questions": [
     {"prompt": "string"}
   ]
@@ -82,7 +81,7 @@ export async function generateWorksheetWithOllama(
   }
 
   return {
-    title: parsed.title,
+    title: topic,
     topic,
     difficulty,
     questions: questions.slice(0, 2).map((q, index) => ({
@@ -105,15 +104,17 @@ export async function gradeWorksheetWithOllama(params: {
   const prompt = `You are grading student answers. Return ONLY valid JSON with schema:
 {
   "results": [
-    {"index": 1, "isCorrect": true|false, "feedback": "string"}
+    {"index": 1, "isCorrect": true|false, "feedback": "string", "correctAnswer": "string"}
   ]
 }
 Rules:
 - Judge correctness based ONLY on the question prompt and userAnswer.
 - If correct, isCorrect = true. If not, false.
-- Feedback is 1 short sentence on what to review, must be non-empty.
+- Feedback may be empty ("") if no feedback is needed.
+- If incorrect, provide a concise correct answer in correctAnswer.
+- If correct, set correctAnswer to "".
 - Use the provided index number for each question.
-- Use ONLY the keys: index, isCorrect, feedback.
+- Use ONLY the keys: index, isCorrect, feedback, correctAnswer.
 
 Data:
 ${JSON.stringify(params.questions)}
@@ -136,17 +137,28 @@ ${JSON.stringify(params.questions)}
               : typeof item.isfalse === "boolean"
               ? !item.isfalse
               : Boolean(item.isCorrect),
-          feedback: item.feedback ?? item.feedbacw ?? ""
+          feedback: item.feedback ?? item.feedbacw ?? "",
+          correctAnswer:
+            item.correctAnswer ?? item.correctanswer ?? item.answer ?? ""
         }))
       : []
   };
   const parsed = gradingSchema.parse(normalized);
+  const results = parsed.results.map((result) => {
+    if (result.feedback.trim().length > 0) {
+      return result;
+    }
+    return {
+      ...result,
+      feedback: result.isCorrect ? "Correct." : "Review the core concept and try again."
+    };
+  });
 
   const validIndexes = new Set(params.questions.map((q) => q.index));
-  const invalid = parsed.results.filter((r) => !validIndexes.has(r.index));
-  if (invalid.length > 0 || parsed.results.some((r) => r.feedback.trim().length === 0)) {
+  const invalid = results.filter((r) => !validIndexes.has(r.index));
+  if (invalid.length > 0) {
     throw new Error("AI grading returned invalid results.");
   }
 
-  return parsed.results;
+  return results;
 }

@@ -50,7 +50,8 @@ export async function fetchWorksheets(userId: string) {
     .from("worksheets")
     .select("id, title, topic, difficulty, created_at")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(10);
 
   return data ?? [];
 }
@@ -77,6 +78,7 @@ export async function createAttempt(params: {
     userAnswer: string;
     feedback: string;
     isCorrect: boolean;
+    correctAnswer: string;
   }[];
 }) {
   const supabase = await createSupabaseServerClient();
@@ -93,7 +95,8 @@ export async function createAttempt(params: {
         prompt: answer.prompt,
         userAnswer: answer.userAnswer,
         feedback: answer.feedback,
-        isCorrect: answer.isCorrect
+        isCorrect: answer.isCorrect,
+        correctAnswer: answer.correctAnswer
       }))
     })
     .select("id, score, answers")
