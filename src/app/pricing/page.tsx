@@ -6,7 +6,7 @@ const tiers = [
     price: "Free",
     description: "Explore personalized worksheets for a single learner.",
     features: [
-      "10 worksheets per request",
+      "2 questions per worksheet",
       "Basic performance tracking",
       "Static worksheet library"
     ]

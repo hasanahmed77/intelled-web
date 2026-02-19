@@ -41,3 +41,19 @@ body {
 .tag {
   @apply rounded-full border border-ink-700 px-3 py-1 text-xs uppercase tracking-[0.2em] text-muted;
 }
+
+@keyframes loading-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(150%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.animate-loading {
+  animation: loading-slide 1.1s ease-in-out infinite;
+}

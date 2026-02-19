@@ -33,12 +33,11 @@ export default async function PracticePage() {
               href={`/practice/${worksheet.id}`}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">{worksheet.title}</h3>
+                <h3 className="text-lg font-semibold">{worksheet.topic}</h3>
                 <span className="text-xs uppercase tracking-[0.2em] text-muted">
                   {worksheet.difficulty}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-muted">{worksheet.topic}</p>
               <p className="mt-4 text-xs text-muted">Created {new Date(worksheet.created_at).toLocaleDateString()}</p>
             </Link>
           ))}

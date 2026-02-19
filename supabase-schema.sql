@@ -56,7 +56,6 @@ create policy "Worksheets are viewable by owners" on worksheets
 create policy "Worksheets are insertable by owners" on worksheets
   for insert with check (auth.uid() = user_id);
 
--- Questions policies
 -- Attempts policies
 create policy "Attempts are viewable by owners" on worksheet_attempts
   for select using (auth.uid() = user_id);

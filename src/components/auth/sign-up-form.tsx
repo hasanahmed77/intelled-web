@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { LoadingBar } from "@/components/loading-bar";
 
 export function SignUpForm() {
   const [email, setEmail] = useState("");
@@ -34,6 +35,7 @@ export function SignUpForm() {
   return (
     <div className="mx-auto max-w-md">
       <div className="card space-y-6 p-8">
+        <LoadingBar active={loading} />
         <div className="space-y-2">
           <span className="tag">Create account</span>
           <h1 className="text-3xl font-semibold">Start with intellED</h1>
@@ -58,7 +60,7 @@ export function SignUpForm() {
         </div>
         <div className="flex flex-col gap-3">
           <button className="button button-primary" onClick={handle} disabled={loading}>
-            Create account
+            {loading ? "Creating account..." : "Create account"}
           </button>
           <Link className="button" href={`/auth/sign-in?redirect=${encodeURIComponent(redirectTo)}`}>
             Already have an account?

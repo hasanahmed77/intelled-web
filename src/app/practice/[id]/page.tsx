@@ -1,6 +1,6 @@
+import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { fetchWorksheetWithQuestions } from "@/lib/worksheet/data";
-import { notFound } from "next/navigation";
 import { WorksheetAttemptForm } from "@/components/worksheet-attempt-form";
 
 export default async function WorksheetDetailPage({
@@ -16,7 +16,7 @@ export default async function WorksheetDetailPage({
     notFound();
   }
 
-  const questions = (worksheet.questions as { id: string; prompt: string; answer: string; feedback: string; order: number }[] | null) ?? [];
+  const questions = (worksheet.questions as { id: string; prompt: string; order: number }[] | null) ?? [];
 
   return (
     <div className="space-y-8">
@@ -27,6 +27,7 @@ export default async function WorksheetDetailPage({
       </div>
       <WorksheetAttemptForm
         worksheetId={worksheet.id}
+        difficulty={worksheet.difficulty}
         questions={[...questions].sort((a, b) => a.order - b.order)}
       />
     </div>

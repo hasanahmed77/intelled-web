@@ -6,10 +6,10 @@ import { generateWorksheet } from "@/lib/worksheet/generator";
 import type { DifficultySelection } from "@/lib/worksheet/types";
 import {
   createAttempt,
-  fetchWorksheetWithQuestions,
   getPerformanceDifficulty,
   insertWorksheet
 } from "@/lib/worksheet/data";
+import { gradeAnswers } from "@/lib/worksheet/grading";
 
 const generateSchema = z.object({
   topic: z.string().min(4, "Add a more specific topic."),
@@ -34,7 +34,7 @@ export async function generateWorksheetsAction(formData: FormData) {
       : (difficulty as Exclude<DifficultySelection, "auto">);
 
   try {
-    const worksheet = generateWorksheet(topic, resolvedDifficulty);
+    const worksheet = await generateWorksheet(topic, resolvedDifficulty);
     const inserted = await insertWorksheet(user.id, worksheet);
     return { ok: true, worksheetId: inserted.id };
   } catch (error) {
@@ -47,11 +47,16 @@ export async function generateWorksheetsAction(formData: FormData) {
 
 const submitSchema = z.object({
   worksheetId: z.string().uuid(),
-  answers: z
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  questions: z
     .array(
       z.object({
-        questionId: z.string().uuid(),
-        answer: z.string().min(1)
+        index: z.number().int().min(1),
+        prompt: z.string().min(1),
+        userAnswer: z.preprocess(
+          (val) => String(val ?? "").trim(),
+          z.string().min(1, "All questions must have an answer.")
+        )
       })
     )
     .min(1)
@@ -59,46 +64,45 @@ const submitSchema = z.object({
 
 export async function submitAttemptAction(payload: {
   worksheetId: string;
-  answers: { questionId: string; answer: string }[];
+  difficulty: "easy" | "medium" | "hard";
+  questions: { index: number; prompt: string; userAnswer: string }[];
 }) {
   const user = await requireUser();
   const parsed = submitSchema.safeParse(payload);
   if (!parsed.success) {
-    return { ok: false, error: "Check your answers and try again." };
-  }
-
-  const worksheet = await fetchWorksheetWithQuestions(user.id, payload.worksheetId);
-  if (!worksheet || !worksheet.questions) {
-    return { ok: false, error: "Worksheet not found." };
-  }
-
-  const answersWithKeys = parsed.data.answers.map((answer) => {
-    const question = (worksheet.questions as { id: string; prompt: string; answer: string; feedback: string }[]).find(
-      (item) => item.id === answer.questionId
-    );
     return {
-      questionId: answer.questionId,
-      answer: answer.answer,
-      correctAnswer: question?.answer ?? "",
-      feedback: question?.feedback ?? "Review the working and try again.",
-      prompt: question?.prompt ?? ""
+      ok: false,
+      error: parsed.error.errors[0]?.message ?? "Check your answers and try again."
     };
-  });
+  }
+
+  let graded;
+  try {
+    graded = await gradeAnswers({ questions: parsed.data.questions });
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "AI grading failed. Please try again."
+    };
+  }
+
+  const correctCount = graded.filter((item) => item.isCorrect).length;
+  const score = Math.round((correctCount / graded.length) * 100);
 
   const result = await createAttempt({
     userId: user.id,
-    worksheetId: worksheet.id,
-    difficulty: worksheet.difficulty,
-    answers: answersWithKeys
+    worksheetId: parsed.data.worksheetId,
+    difficulty: parsed.data.difficulty,
+    score,
+    answers: graded.map((item) => ({
+      index: item.index,
+      prompt: item.prompt,
+      userAnswer: item.userAnswer,
+      feedback: item.feedback,
+      isCorrect: item.isCorrect
+    }))
   });
 
-  const details = answersWithKeys.map((answer) => ({
-    questionId: answer.questionId,
-    isCorrect:
-      answer.answer.trim().toLowerCase() === answer.correctAnswer.trim().toLowerCase(),
-    feedback: answer.feedback,
-    correctAnswer: answer.correctAnswer
-  }));
-
-  return { ok: true, score: result.score, details };
+  return { ok: true, score: result.score, details: graded };
 }

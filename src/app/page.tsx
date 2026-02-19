@@ -31,7 +31,7 @@ export default function HomePage() {
         <div className="card space-y-6 p-8">
           <h2 className="text-xl font-semibold">What you get</h2>
           <ul className="space-y-4 text-sm text-muted">
-            <li>10 worksheets generated per request.</li>
+            <li>2 questions generated per worksheet.</li>
             <li>Difficulty controls: easy, medium, hard, auto.</li>
             <li>Profile analytics that inform future practice.</li>
             <li>Supabase-backed authentication and storage.</li>

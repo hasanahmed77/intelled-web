@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateWorksheetsAction } from "@/app/actions/worksheet";
+import { LoadingBar } from "@/components/loading-bar";
 
 export function PracticeForm() {
   const [state, setState] = useState<{ ok?: boolean; error?: string }>({});
@@ -34,6 +35,7 @@ export function PracticeForm() {
         });
       }}
     >
+      <LoadingBar active={isPending} />
       <div>
         <label className="text-sm text-muted">Worksheet prompt</label>
         <input
@@ -54,7 +56,7 @@ export function PracticeForm() {
       </div>
       {state?.error ? <p className="text-sm text-red-400">{state.error}</p> : null}
       {state?.ok ? (
-        <p className="text-sm text-accent">Generated. Scroll down to view worksheets.</p>
+        <p className="text-sm text-accent">Generated. Redirecting...</p>
       ) : null}
       <button className="button button-primary" type="submit" disabled={isPending}>
         {isPending ? "Generating..." : "Generate worksheet"}

@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Difficulty, GeneratedQuestion, GeneratedWorksheet } from "@/lib/worksheet/types";
+import type { Difficulty, GeneratedWorksheet } from "@/lib/worksheet/types";
 
 export async function getPerformanceDifficulty(userId: string): Promise<Difficulty> {
   const supabase = await createSupabaseServerClient();
@@ -28,13 +28,17 @@ export async function insertWorksheet(userId: string, worksheet: GeneratedWorksh
       title: worksheet.title,
       topic: worksheet.topic,
       difficulty: worksheet.difficulty,
-      questions: worksheet.questions
+      questions: worksheet.questions.map((q) => ({
+        id: q.id,
+        prompt: q.prompt,
+        order: q.order
+      }))
     })
     .select("id, title, topic, difficulty, questions")
     .single();
 
   if (error || !worksheetRow) {
-    throw new Error(error?.message ?? "Failed to create worksheets");
+    throw new Error(error?.message ?? "Failed to create worksheet");
   }
 
   return worksheetRow;
@@ -66,35 +70,30 @@ export async function createAttempt(params: {
   userId: string;
   worksheetId: string;
   difficulty: Difficulty;
+  score: number;
   answers: {
-    questionId: string;
-    answer: string;
-    correctAnswer: string;
-    feedback: string;
+    index: number;
     prompt: string;
+    userAnswer: string;
+    feedback: string;
+    isCorrect: boolean;
   }[];
 }) {
   const supabase = await createSupabaseServerClient();
-  const correctCount = params.answers.filter(
-    (answer) => answer.answer.trim().toLowerCase() === answer.correctAnswer.trim().toLowerCase()
-  ).length;
-  const score = Math.round((correctCount / params.answers.length) * 100);
 
   const { data: attempt, error } = await supabase
     .from("worksheet_attempts")
     .insert({
       user_id: params.userId,
       worksheet_id: params.worksheetId,
-      score,
+      score: params.score,
       difficulty_used: params.difficulty,
       answers: params.answers.map((answer) => ({
-        questionId: answer.questionId,
+        index: answer.index,
         prompt: answer.prompt,
-        userAnswer: answer.answer,
-        correctAnswer: answer.correctAnswer,
+        userAnswer: answer.userAnswer,
         feedback: answer.feedback,
-        isCorrect:
-          answer.answer.trim().toLowerCase() === answer.correctAnswer.trim().toLowerCase()
+        isCorrect: answer.isCorrect
       }))
     })
     .select("id, score, answers")
@@ -104,16 +103,14 @@ export async function createAttempt(params: {
     throw new Error(error?.message ?? "Failed to create attempt");
   }
 
-  return { attemptId: attempt.id, score };
+  return { attemptId: attempt.id, score: attempt.score };
 }
 
 export async function fetchAttempts(userId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("worksheet_attempts")
-    .select(
-      "id, score, created_at, difficulty_used, worksheets(title, topic)"
-    )
+    .select("id, score, created_at, difficulty_used, worksheets(title, topic)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
