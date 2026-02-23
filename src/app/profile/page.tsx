@@ -15,6 +15,11 @@ export default async function ProfilePage() {
     fetchAttempts(user.id),
     fetchWorksheets(user.id)
   ]);
+  const completedWorksheetIds = new Set(
+    attempts
+      .map((attempt) => attempt.worksheet_id)
+      .filter((id): id is string => Boolean(id))
+  );
 
   const average =
     attempts.length > 0
@@ -56,11 +61,22 @@ export default async function ProfilePage() {
               className="card p-5 transition hover:border-accent"
               href={`/practice/${worksheet.id}`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold">{toTitleCase(worksheet.title)}</h3>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted">
-                  {worksheet.difficulty}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                      completedWorksheetIds.has(worksheet.id)
+                        ? "border-green-500/40 text-green-400"
+                        : "border-amber-500/40 text-amber-300"
+                    }`}
+                  >
+                    {completedWorksheetIds.has(worksheet.id) ? "Complete" : "Incomplete"}
+                  </span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted">
+                    {worksheet.difficulty}
+                  </span>
+                </div>
               </div>
               <p className="mt-2 text-sm text-muted">{worksheet.topic}</p>
               <p className="mt-4 text-xs text-muted">

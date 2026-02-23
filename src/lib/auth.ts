@@ -3,21 +3,21 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function requireUser(redirectTo?: string) {
   const supabase = await createSupabaseServerClient();
-  const { data: sessionData } = await supabase.auth.getSession();
-  const sessionUser = sessionData.session?.user ?? null;
+  const { data, error } = await supabase.auth.getUser();
+  const user = data.user ?? null;
 
-  if (!sessionUser) {
+  if (error || !user) {
     const target = redirectTo
       ? `/auth/sign-in?redirect=${encodeURIComponent(redirectTo)}`
       : "/auth/sign-in";
     redirect(target);
   }
 
-  return sessionUser;
+  return user;
 }
 
 export async function getUser() {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getSession();
-  return data.session?.user ?? null;
+  const { data } = await supabase.auth.getUser();
+  return data.user ?? null;
 }

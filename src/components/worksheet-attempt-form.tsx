@@ -32,6 +32,7 @@ export function WorksheetAttemptForm({
   initialAnswers: Record<string, string>;
   initialResult: { score: number; details: Result[] } | null;
 }) {
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(submitted);
   const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [result, setResult] = useState<{ score: number; details: Result[] } | null>(
     initialResult
@@ -40,6 +41,11 @@ export function WorksheetAttemptForm({
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = () => {
+    if (isSubmitted) {
+      setError("This worksheet has already been submitted.");
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
       const missing = questions.find(
@@ -66,6 +72,7 @@ export function WorksheetAttemptForm({
         return;
       }
       setResult({ score: response.score ?? 0, details: response.details ?? [] });
+      setIsSubmitted(true);
     });
   };
 
@@ -81,8 +88,8 @@ export function WorksheetAttemptForm({
               className="input"
               placeholder="Your answer"
               value={answers[question.id] ?? ""}
-              disabled={submitted}
-              readOnly={submitted}
+              disabled={isSubmitted}
+              readOnly={isSubmitted}
               onChange={(event) =>
                 setAnswers((prev) => ({ ...prev, [question.id]: event.target.value }))
               }
@@ -122,7 +129,7 @@ export function WorksheetAttemptForm({
       {error ? <p className="text-sm text-red-400">ERROR:{error}</p> : null}
 
       <div className="flex flex-wrap items-center gap-4">
-        {submitted ? (
+        {isSubmitted ? (
           <span className="text-sm text-muted">Submitted</span>
         ) : (
           <button className="button button-primary" onClick={handleSubmit} disabled={isPending}>

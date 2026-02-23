@@ -129,7 +129,7 @@ export async function fetchAttempts(userId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("worksheet_attempts")
-    .select("id, score, created_at, difficulty_used, worksheets(title, topic)")
+    .select("id, worksheet_id, score, created_at, difficulty_used, worksheets(title, topic)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
