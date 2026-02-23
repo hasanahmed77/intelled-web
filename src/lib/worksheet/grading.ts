@@ -1,5 +1,9 @@
 import { gradeWorksheetWithOllama } from "@/lib/ollama";
 
+function normalize(value: string) {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 export async function gradeAnswers(params: {
   questions: {
     index: number;
@@ -21,13 +25,18 @@ export async function gradeAnswers(params: {
       throw new Error("AI grading returned incomplete results.");
     }
 
+    const user = normalize(q.userAnswer);
+    const expected = normalize(ai.correctAnswer);
+    const sameAnswer = expected.length > 0 && user === expected;
+    const isCorrect = ai.isCorrect || sameAnswer;
+
     return {
       index: q.index,
       prompt: q.prompt,
       userAnswer: q.userAnswer,
-      feedback: ai.feedback,
-      isCorrect: ai.isCorrect,
-      correctAnswer: ai.correctAnswer
+      feedback: isCorrect ? ai.feedback : ai.feedback,
+      isCorrect,
+      correctAnswer: isCorrect ? "" : ai.correctAnswer
     };
   });
 }

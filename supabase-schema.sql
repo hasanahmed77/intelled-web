@@ -29,6 +29,8 @@ create table if not exists worksheet_attempts (
   answers jsonb not null,
   created_at timestamptz not null default now()
 );
+create unique index if not exists worksheet_attempts_worksheet_id_unique_idx
+  on worksheet_attempts(worksheet_id);
 
 -- Basic indexes
 create index if not exists worksheets_user_id_idx on worksheets(user_id);

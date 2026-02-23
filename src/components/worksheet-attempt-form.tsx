@@ -20,15 +20,21 @@ type Result = {
 export function WorksheetAttemptForm({
   worksheetId,
   difficulty,
-  questions
+  questions,
+  submitted,
+  initialAnswers,
+  initialResult
 }: {
   worksheetId: string;
   difficulty: "easy" | "medium" | "hard";
   questions: Question[];
+  submitted: boolean;
+  initialAnswers: Record<string, string>;
+  initialResult: { score: number; details: Result[] } | null;
 }) {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [result, setResult] = useState<{ score: number; details: Result[] } | null>(
-    null
+    initialResult
   );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -75,6 +81,8 @@ export function WorksheetAttemptForm({
               className="input"
               placeholder="Your answer"
               value={answers[question.id] ?? ""}
+              disabled={submitted}
+              readOnly={submitted}
               onChange={(event) =>
                 setAnswers((prev) => ({ ...prev, [question.id]: event.target.value }))
               }
@@ -114,9 +122,13 @@ export function WorksheetAttemptForm({
       {error ? <p className="text-sm text-red-400">ERROR:{error}</p> : null}
 
       <div className="flex flex-wrap items-center gap-4">
-        <button className="button button-primary" onClick={handleSubmit} disabled={isPending}>
-          {isPending ? "Submitting..." : "Submit answers"}
-        </button>
+        {submitted ? (
+          <span className="text-sm text-muted">Submitted</span>
+        ) : (
+          <button className="button button-primary" onClick={handleSubmit} disabled={isPending}>
+            {isPending ? "Submitting..." : "Submit answers"}
+          </button>
+        )}
         {result ? (
           <p className="text-sm text-accent">Score: {result.score}%</p>
         ) : null}

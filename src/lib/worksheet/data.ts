@@ -62,7 +62,20 @@ export async function fetchWorksheetWithQuestions(userId: string, worksheetId: s
     .from("worksheets")
     .select("id, title, topic, difficulty, questions")
     .eq("id", worksheetId)
+    .eq("user_id", userId)
     .single();
+
+  return data;
+}
+
+export async function fetchAttemptByWorksheet(userId: string, worksheetId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("worksheet_attempts")
+    .select("id, score, answers, created_at")
+    .eq("user_id", userId)
+    .eq("worksheet_id", worksheetId)
+    .maybeSingle();
 
   return data;
 }
@@ -103,6 +116,9 @@ export async function createAttempt(params: {
     .single();
 
   if (error || !attempt) {
+    if (error?.code === "23505") {
+      throw new Error("This worksheet has already been submitted.");
+    }
     throw new Error(error?.message ?? "Failed to create attempt");
   }
 

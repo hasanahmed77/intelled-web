@@ -6,6 +6,7 @@ import { generateWorksheet } from "@/lib/worksheet/generator";
 import type { DifficultySelection } from "@/lib/worksheet/types";
 import {
   createAttempt,
+  fetchAttemptByWorksheet,
   getPerformanceDifficulty,
   insertWorksheet
 } from "@/lib/worksheet/data";
@@ -73,6 +74,14 @@ export async function submitAttemptAction(payload: {
     return {
       ok: false,
       error: parsed.error.errors[0]?.message ?? "Check your answers and try again."
+    };
+  }
+
+  const existingAttempt = await fetchAttemptByWorksheet(user.id, parsed.data.worksheetId);
+  if (existingAttempt) {
+    return {
+      ok: false,
+      error: "This worksheet has already been submitted."
     };
   }
 
