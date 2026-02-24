@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 type RaysOrigin =
   | "top-left"
@@ -131,33 +131,12 @@ export default function LightRays({
   const programRef = useRef<WebGLProgram | null>(null);
   const frameRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
   const smoothMouseRef = useRef({ x: 0.5, y: 0.5 });
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) {
-      return;
-    }
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        setIsVisible(Boolean(entries[0]?.isIntersecting));
-      },
-      { threshold: 0.1 }
-    );
-
-    observerRef.current.observe(containerRef.current);
-    return () => {
-      observerRef.current?.disconnect();
-      observerRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isVisible || !containerRef.current) {
       return;
     }
 
@@ -424,7 +403,6 @@ export default function LightRays({
       }
     };
   }, [
-    isVisible,
     raysOrigin,
     raysColor,
     raysSpeed,

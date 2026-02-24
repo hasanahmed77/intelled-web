@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { AuthButton } from "@/components/auth-button";
 
 export function NavbarClient() {
+  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -47,12 +49,40 @@ export function NavbarClient() {
           <span className="text-sm uppercase tracking-[0.3em] text-zinc-300">intellED</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm">
-          <Link className="text-zinc-300 hover:text-accent" href="/pricing">
+          <Link
+            className={`transition hover:text-accent ${
+              pathname === "/pricing"
+                ? "text-accent underline decoration-accent/80 underline-offset-8"
+                : "text-zinc-300"
+            }`}
+            href="/pricing"
+          >
             Pricing
           </Link>
-          <Link className="text-zinc-300 hover:text-accent" href="/practice">
-            Practice
-          </Link>
+          {loading ? (
+            <span className="cursor-not-allowed text-zinc-500 line-through decoration-zinc-500/80">
+              Practice
+            </span>
+          ) : isAuthed ? (
+            <Link
+              className={`transition hover:text-accent ${
+                pathname.startsWith("/practice")
+                  ? "text-accent underline decoration-accent/80 underline-offset-8"
+                  : "text-zinc-300"
+              }`}
+              href="/practice"
+            >
+              Practice
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              className="cursor-not-allowed text-zinc-500 line-through decoration-zinc-500/80"
+              title="Sign in to access Practice"
+            >
+              Practice
+            </span>
+          )}
           {loading ? (
             <span className="h-9 w-24 animate-pulse rounded-full border border-ink-700 bg-ink-900/70" />
           ) : (
@@ -60,7 +90,11 @@ export function NavbarClient() {
               {isAuthed ? (
                 <Link
                   href="/profile"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-ink-700 bg-ink-900/70 text-sm font-semibold text-white transition hover:border-accent hover:text-accent"
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
+                    pathname === "/profile"
+                      ? "border-accent text-accent"
+                      : "border-ink-700 text-white"
+                  }`}
                   aria-label="Open profile"
                 >
                   {initial || "U"}

@@ -17,11 +17,13 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="min-h-screen bg-grid">
-          <NavbarClient />
-          <main className="mx-auto w-full max-w-6xl px-6 pb-0 pt-0">
-            {children}
-          </main>
-          <Footer />
+          <div className="relative z-10">
+            <NavbarClient />
+            <main className="mx-auto w-full max-w-6xl px-6 pb-0 pt-0">
+              {children}
+            </main>
+            <Footer />
+          </div>
         </div>
       </body>
     </html>
