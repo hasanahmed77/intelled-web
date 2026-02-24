@@ -5,7 +5,12 @@ import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "intellED",
-  description: "Generate personalized worksheets with adaptive difficulty."
+  description: "Generate personalized worksheets with adaptive difficulty.",
+  icons: {
+    icon: "/brand/logo.svg",
+    shortcut: "/brand/logo.svg",
+    apple: "/brand/logo.svg"
+  }
 };
 
 export default function RootLayout({
@@ -16,10 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="min-h-screen bg-grid">
-          <div className="relative z-10">
+        <div className="flex min-h-screen flex-col bg-grid">
+          <div className="relative z-10 flex min-h-screen flex-col">
             <NavbarClient />
-            <main className="mx-auto w-full max-w-6xl px-6 pb-0 pt-0">
+            <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-0 pt-0">
               {children}
             </main>
             <Footer />

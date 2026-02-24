@@ -35,35 +35,37 @@ const tiers = [
 
 export default function PricingPage() {
   return (
-    <div className="min-h-[calc(100svh-6rem)] space-y-12 pb-16 pt-24">
-      <div className="space-y-4">
-        <span className="tag">Pricing</span>
-        <h1 className="text-4xl font-semibold">Simple, transparent plans.</h1>
-        <p className="text-muted">
-          Start free and scale as your classroom grows. All plans include the core
-          worksheet engine.
-        </p>
-      </div>
-      <div className="grid gap-6 md:grid-cols-3">
-        {tiers.map((tier) => (
-          <div key={tier.name} className="card flex flex-col gap-6 p-6">
-            <div>
-              <h2 className="text-2xl font-semibold">{tier.name}</h2>
-              <p className="mt-2 text-muted">{tier.description}</p>
+    <div className="flex min-h-[100svh] items-center pt-[72px]">
+      <div className="w-full space-y-12">
+        <div className="space-y-4">
+          <span className="tag">Pricing</span>
+          <h1 className="text-4xl font-semibold">Simple, transparent plans.</h1>
+          <p className="text-muted">
+            Start free and scale as your classroom grows. All plans include the core
+            worksheet engine.
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {tiers.map((tier) => (
+            <div key={tier.name} className="card flex flex-col gap-6 p-6">
+              <div>
+                <h2 className="text-2xl font-semibold">{tier.name}</h2>
+                <p className="mt-2 text-muted">{tier.description}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-semibold">{tier.price}</p>
+              </div>
+              <ul className="space-y-2 text-sm text-muted">
+                {tier.features.map((feature) => (
+                  <li key={feature}>• {feature}</li>
+                ))}
+              </ul>
+              <Link className="button button-primary mt-auto" href="/practice">
+                Get started
+              </Link>
             </div>
-            <div>
-              <p className="text-3xl font-semibold">{tier.price}</p>
-            </div>
-            <ul className="space-y-2 text-sm text-muted">
-              {tier.features.map((feature) => (
-                <li key={feature}>• {feature}</li>
-              ))}
-            </ul>
-            <Link className="button button-primary mt-auto" href="/practice">
-              Get started
-            </Link>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

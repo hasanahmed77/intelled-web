@@ -58,7 +58,7 @@ export default async function WorksheetDetailPage({
     : null;
 
   return (
-    <div className="min-h-[calc(100svh-6rem)] space-y-8 pb-16 pt-24">
+    <div className="min-h-[calc(100svh+6rem)] space-y-8 pb-24 pt-24">
       <div className="space-y-2">
         <span className="tag">{worksheet.difficulty} difficulty</span>
         <h1 className="text-3xl font-semibold">{toTitleCase(worksheet.title)}</h1>

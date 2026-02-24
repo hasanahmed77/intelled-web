@@ -1,6 +1,6 @@
 import Link from "next/link";
 import LightRays from "@/components/light-rays";
-import { getUser } from "@/lib/auth";
+import { StartPracticeLink } from "@/components/start-practice-link";
 
 const points = [
   "Learn ANYTHING platform",
@@ -9,10 +9,7 @@ const points = [
   "School subjects"
 ];
 
-export default async function HomePage() {
-  const user = await getUser();
-  const practiceHref = user ? "/practice" : "/auth/sign-in?redirect=%2Fpractice";
-
+export default function HomePage() {
   return (
     <div className="relative left-1/2 w-screen -translate-x-1/2 bg-black text-white">
       <section className="relative min-h-[100svh] overflow-hidden px-6 py-0 md:px-12">
@@ -70,9 +67,7 @@ export default async function HomePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link className="button button-primary" href={practiceHref}>
-                Start Practicing
-              </Link>
+              <StartPracticeLink />
               <Link className="button button-dark-accent" href="/pricing">
                 View Pricing
               </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -44,9 +45,15 @@ export function NavbarClient() {
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
       />
       <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="h-3 w-3 rounded-full bg-accent shadow-glow" />
-          <span className="text-sm uppercase tracking-[0.3em] text-zinc-300">intellED</span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/brand/logo.svg"
+            alt="intellED logo"
+            width={164}
+            height={44}
+            priority
+            className="h-10 w-auto object-contain"
+          />
         </Link>
         <nav className="flex items-center gap-6 text-sm">
           <Link

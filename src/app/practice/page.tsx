@@ -5,17 +5,19 @@ export default async function PracticePage() {
   await requireUser("/practice");
 
   return (
-    <div className="min-h-[calc(100svh-6rem)] space-y-10 pb-16 pt-24">
-      <div className="space-y-2">
-        <span className="tag">Practice</span>
-        <h1 className="text-3xl font-semibold">Generate your next worksheet.</h1>
-        <p className="text-muted">
-          Enter a topic and choose a difficulty. Auto uses your performance history to
-          tune the worksheet level.
-        </p>
-      </div>
+    <div className="flex min-h-[100svh] items-center pt-[72px]">
+      <div className="w-full space-y-10">
+        <div className="space-y-2">
+          <span className="tag">Practice</span>
+          <h1 className="text-3xl font-semibold">Generate your next worksheet.</h1>
+          <p className="text-muted">
+            Enter a topic and choose a difficulty. Auto uses your performance history to
+            tune the worksheet level.
+          </p>
+        </div>
 
-      <PracticeForm />
+        <PracticeForm />
+      </div>
     </div>
   );
 }
