@@ -33,12 +33,12 @@ export function SignUpForm() {
   };
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="card space-y-6 p-8">
+    <div className="mx-auto w-full max-w-md px-1 sm:px-0">
+      <div className="card space-y-6 p-6 sm:p-8">
         <LoadingBar active={loading} />
         <div className="space-y-2">
           <span className="tag">Create account</span>
-          <h1 className="text-3xl font-semibold">Start with intellED</h1>
+          <h1 className="text-2xl font-semibold sm:text-3xl">Start with intellED</h1>
           <p className="text-sm text-muted">Set up your account in minutes.</p>
         </div>
         <div className="space-y-4">

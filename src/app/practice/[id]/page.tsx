@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { fetchAttemptByWorksheet, fetchWorksheetWithQuestions } from "@/lib/worksheet/data";
 import { WorksheetAttemptForm } from "@/components/worksheet-attempt-form";
+import { ViewportSection } from "@/components/viewport-section";
 
 function toTitleCase(value: string) {
   return value.replace(/\w\S*/g, (word) => {
@@ -58,7 +59,7 @@ export default async function WorksheetDetailPage({
     : null;
 
   return (
-    <div className="min-h-[calc(100svh+6rem)] space-y-8 pb-24 pt-24">
+    <ViewportSection innerClassName="space-y-8">
       <div className="space-y-2">
         <span className="tag">{worksheet.difficulty} difficulty</span>
         <h1 className="text-3xl font-semibold">{toTitleCase(worksheet.title)}</h1>
@@ -72,6 +73,6 @@ export default async function WorksheetDetailPage({
         initialAnswers={initialAnswers}
         initialResult={initialResult}
       />
-    </div>
+    </ViewportSection>
   );
 }

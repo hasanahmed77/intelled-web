@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { fetchAttempts, fetchWorksheets } from "@/lib/worksheet/data";
+import { ViewportSection } from "@/components/viewport-section";
 
 function toTitleCase(value: string) {
   return value.replace(/\w\S*/g, (word) => {
@@ -27,7 +28,7 @@ export default async function ProfilePage() {
       : 0;
 
   return (
-    <div className="min-h-[calc(100svh-6rem)] space-y-10 pb-16 pt-24">
+    <ViewportSection innerClassName="space-y-10 pt-6 pb-20">
       <div className="space-y-2">
         <span className="tag">Profile</span>
         <h1 className="text-3xl font-semibold">{toTitleCase(username)}</h1>
@@ -91,6 +92,6 @@ export default async function ProfilePage() {
           ) : null}
         </div>
       </section>
-    </div>
+    </ViewportSection>
   );
 }

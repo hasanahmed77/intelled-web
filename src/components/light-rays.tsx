@@ -362,10 +362,7 @@ export default function LightRays({
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) {
-        return;
-      }
-      const rect = containerRef.current.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       const x = (e.clientX - rect.left) / Math.max(1, rect.width);
       const y = (e.clientY - rect.top) / Math.max(1, rect.height);
       mouseRef.current = { x, y };
@@ -398,9 +395,7 @@ export default function LightRays({
       glRef.current = null;
       canvasRef.current = null;
       startRef.current = 0;
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-      }
+      container.innerHTML = "";
     };
   }, [
     raysOrigin,

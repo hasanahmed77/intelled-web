@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -8,9 +9,9 @@ export function AuthButton({ isAuthed }: { isAuthed: boolean }) {
 
   if (!isAuthed) {
     return (
-      <a className="button" href="/auth/sign-in">
+      <Link className="button" href="/auth/sign-in">
         Sign in
-      </a>
+      </Link>
     );
   }
 

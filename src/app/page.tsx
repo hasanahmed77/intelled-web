@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import LightRays from "@/components/light-rays";
 import { StartPracticeLink } from "@/components/start-practice-link";
 
@@ -12,12 +13,14 @@ const points = [
 export default function HomePage() {
   return (
     <div className="relative left-1/2 w-screen -translate-x-1/2 bg-black text-white">
-      <section className="relative min-h-[100svh] overflow-hidden px-6 py-0 md:px-12">
+      <section className="relative min-h-[100svh] overflow-hidden px-4 py-0 sm:px-6 md:px-12">
         <div className="pointer-events-none absolute inset-0">
-          <img
+          <Image
             src="/images/robot-yellow-more.jpg"
             alt="Robot hero background"
-            className="absolute bottom-[-6%] left-1/2 z-0 w-[1150px] max-w-[96vw] -translate-x-1/2 opacity-50 md:opacity-65"
+            width={1150}
+            height={720}
+            className="absolute bottom-[-4%] left-1/2 z-0 w-[980px] max-w-[98vw] -translate-x-1/2 opacity-45 sm:w-[1100px] md:bottom-[-6%] md:w-[1150px] md:max-w-[96vw] md:opacity-65"
           />
           <LightRays
             raysOrigin="top-center"
@@ -40,9 +43,9 @@ export default function HomePage() {
           <div className="absolute inset-x-0 top-0 z-[1] h-72 bg-gradient-to-b from-black/40 via-black/10 to-transparent" />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl flex-col items-center justify-center py-16">
+        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl flex-col items-center justify-center py-14 sm:py-16">
           <div className="max-w-5xl text-center">
-            <h1 className="text-5xl font-semibold leading-[1.05] drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)] md:text-7xl">
+            <h1 className="text-4xl font-semibold leading-[1.05] drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)] sm:text-5xl md:text-7xl">
               <span className="bg-gradient-to-r from-accent via-yellow-300 to-white bg-clip-text text-transparent">
                 Learn Anything.
               </span>
@@ -50,23 +53,23 @@ export default function HomePage() {
               Practice Smarter.
             </h1>
 
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-zinc-300 drop-shadow-[0_8px_22px_rgba(0,0,0,0.7)] md:text-2xl">
+            <p className="mx-auto mt-5 max-w-3xl text-base text-zinc-300 drop-shadow-[0_8px_22px_rgba(0,0,0,0.7)] sm:mt-6 sm:text-lg md:text-2xl">
               One platform for O/A Levels, SSC, HSC, IELTS, GRE, SAT, and school topics.
               Generate focused worksheets, submit once, and get AI evaluation.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:mt-8 sm:gap-3">
               {points.map((point) => (
                 <span
                   key={point}
-                  className="rounded-full border border-ink-700 bg-ink-900/85 px-4 py-2 text-xs uppercase tracking-[0.14em] text-zinc-200 shadow-[0_10px_20px_rgba(0,0,0,0.45)]"
+                  className="rounded-full border border-ink-700 bg-ink-900/85 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-zinc-200 shadow-[0_10px_20px_rgba(0,0,0,0.45)] sm:px-4 sm:py-2 sm:text-xs sm:tracking-[0.14em]"
                 >
                   {point}
                 </span>
               ))}
             </div>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <div className="mt-7 flex flex-wrap justify-center gap-3">
               <StartPracticeLink />
               <Link className="button button-dark-accent" href="/pricing">
                 View Pricing
@@ -74,7 +77,7 @@ export default function HomePage() {
             </div>
           </div>
 
-            <div className="mt-10 grid w-full max-w-5xl gap-4 md:grid-cols-3">
+          <div className="mt-10 grid w-full max-w-5xl gap-4 md:grid-cols-3">
             <div className="card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Generation</p>
               <p className="mt-2 text-sm text-zinc-200">Topic-specific worksheets for exact exam goals.</p>

@@ -33,12 +33,12 @@ export function SignInForm() {
   };
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="card space-y-6 p-8">
+    <div className="mx-auto w-full max-w-md px-1 sm:px-0">
+      <div className="card space-y-6 p-6 sm:p-8">
         <LoadingBar active={loading} />
         <div className="space-y-2">
           <span className="tag">Sign in</span>
-          <h1 className="text-3xl font-semibold">Welcome back</h1>
+          <h1 className="text-2xl font-semibold sm:text-3xl">Welcome back</h1>
           <p className="text-sm text-muted">Use your email and password.</p>
         </div>
         <div className="space-y-4">

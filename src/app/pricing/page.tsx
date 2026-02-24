@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ViewportSection } from "@/components/viewport-section";
 
 const tiers = [
   {
@@ -35,7 +36,7 @@ const tiers = [
 
 export default function PricingPage() {
   return (
-    <div className="flex min-h-[100svh] items-center pt-[72px]">
+    <ViewportSection center>
       <div className="w-full space-y-12">
         <div className="space-y-4">
           <span className="tag">Pricing</span>
@@ -67,6 +68,6 @@ export default function PricingPage() {
           ))}
         </div>
       </div>
-    </div>
+    </ViewportSection>
   );
 }

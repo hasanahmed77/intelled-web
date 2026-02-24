@@ -1,12 +1,13 @@
 import { Suspense } from "react";
 import { SignInForm } from "@/components/auth/sign-in-form";
+import { ViewportSection } from "@/components/viewport-section";
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-[100svh] items-center justify-center pt-[72px]">
+    <ViewportSection center>
       <Suspense fallback={<div className="text-muted">Loading...</div>}>
         <SignInForm />
       </Suspense>
-    </div>
+    </ViewportSection>
   );
 }

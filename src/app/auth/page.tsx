@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { ViewportSection } from "@/components/viewport-section";
 
 export default function AuthIndexPage() {
   return (
-    <div className="mx-auto min-h-[calc(100svh-6rem)] max-w-md pb-16 pt-24">
+    <ViewportSection center>
+      <div className="mx-auto w-full max-w-md">
       <div className="card space-y-6 p-8 text-center">
         <div className="space-y-2">
           <span className="tag">Account</span>
@@ -18,6 +20,7 @@ export default function AuthIndexPage() {
           </Link>
         </div>
       </div>
-    </div>
+      </div>
+    </ViewportSection>
   );
 }

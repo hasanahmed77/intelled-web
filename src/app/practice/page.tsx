@@ -1,11 +1,12 @@
 import { requireUser } from "@/lib/auth";
 import { PracticeForm } from "@/components/practice-form";
+import { ViewportSection } from "@/components/viewport-section";
 
 export default async function PracticePage() {
   await requireUser("/practice");
 
   return (
-    <div className="flex min-h-[100svh] items-center pt-[72px]">
+    <ViewportSection center>
       <div className="w-full space-y-10">
         <div className="space-y-2">
           <span className="tag">Practice</span>
@@ -18,6 +19,6 @@ export default async function PracticePage() {
 
         <PracticeForm />
       </div>
-    </div>
+    </ViewportSection>
   );
 }
