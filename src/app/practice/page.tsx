@@ -5,7 +5,7 @@ export default async function PracticePage() {
   await requireUser("/practice");
 
   return (
-    <div className="space-y-10">
+    <div className="min-h-[calc(100svh-6rem)] space-y-10 pb-16 pt-24">
       <div className="space-y-2">
         <span className="tag">Practice</span>
         <h1 className="text-3xl font-semibold">Generate your next worksheet.</h1>

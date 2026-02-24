@@ -35,7 +35,7 @@ const tiers = [
 
 export default function PricingPage() {
   return (
-    <div className="space-y-12">
+    <div className="min-h-[calc(100svh-6rem)] space-y-12 pb-16 pt-24">
       <div className="space-y-4">
         <span className="tag">Pricing</span>
         <h1 className="text-4xl font-semibold">Simple, transparent plans.</h1>

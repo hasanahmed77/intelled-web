@@ -3,8 +3,10 @@ import { SignUpForm } from "@/components/auth/sign-up-form";
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={<div className="text-muted">Loading...</div>}>
-      <SignUpForm />
-    </Suspense>
+    <div className="min-h-[calc(100svh-6rem)] pb-16 pt-24">
+      <Suspense fallback={<div className="text-muted">Loading...</div>}>
+        <SignUpForm />
+      </Suspense>
+    </div>
   );
 }

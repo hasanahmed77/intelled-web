@@ -36,27 +36,31 @@ export function NavbarClient() {
   }, []);
 
   return (
-    <header className="border-b border-ink-800/80 bg-ink-950/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+    <header className="fixed inset-x-0 top-0 z-50">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
+      />
+      <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
           <span className="h-3 w-3 rounded-full bg-accent shadow-glow" />
-          <span className="text-sm uppercase tracking-[0.3em] text-muted">intellED</span>
+          <span className="text-sm uppercase tracking-[0.3em] text-zinc-300">intellED</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm">
-          <Link className="hover:text-accent" href="/pricing">
+          <Link className="text-zinc-300 hover:text-accent" href="/pricing">
             Pricing
           </Link>
-          <Link className="hover:text-accent" href="/practice">
+          <Link className="text-zinc-300 hover:text-accent" href="/practice">
             Practice
           </Link>
           {loading ? (
-            <span className="h-9 w-24 animate-pulse rounded-full border border-ink-700 bg-ink-900" />
+            <span className="h-9 w-24 animate-pulse rounded-full border border-ink-700 bg-ink-900/70" />
           ) : (
             <div className="flex items-center gap-3">
               {isAuthed ? (
                 <Link
                   href="/profile"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-ink-700 bg-ink-900 text-sm font-semibold text-white transition hover:border-accent hover:text-accent"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-ink-700 bg-ink-900/70 text-sm font-semibold text-white transition hover:border-accent hover:text-accent"
                   aria-label="Open profile"
                 >
                   {initial || "U"}

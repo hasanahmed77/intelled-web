@@ -26,6 +26,27 @@ body {
   @apply rounded-2xl border border-ink-700/60 bg-ink-900/80 shadow-glow;
 }
 
+.card-cracked {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-cracked::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.24;
+  background-image:
+    linear-gradient(112deg, transparent 0 35%, rgba(255, 214, 10, 0.22) 35.5%, transparent 36.5%),
+    linear-gradient(18deg, transparent 0 57%, rgba(255, 255, 255, 0.14) 57.6%, transparent 58.4%),
+    linear-gradient(146deg, transparent 0 68%, rgba(255, 214, 10, 0.16) 68.5%, transparent 69.3%),
+    linear-gradient(63deg, transparent 0 81%, rgba(255, 255, 255, 0.12) 81.5%, transparent 82.2%);
+  background-size: 210px 160px, 180px 140px, 220px 180px, 170px 130px;
+  background-position: 10% 24%, 84% 32%, 30% 78%, 72% 86%;
+  mix-blend-mode: screen;
+}
+
 .input {
   @apply w-full rounded-xl border border-ink-700 bg-ink-950 px-4 py-3 text-white placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30;
 }
@@ -36,6 +57,10 @@ body {
 
 .button-primary {
   @apply border-transparent bg-accent text-ink-950 hover:bg-white hover:text-ink-950;
+}
+
+.button-dark-accent {
+  @apply border-ink-700/60 bg-ink-900/80 text-accent hover:border-accent hover:bg-ink-900/80 hover:text-accent;
 }
 
 .tag {
@@ -56,4 +81,20 @@ body {
 
 .animate-loading {
   animation: loading-slide 1.1s ease-in-out infinite;
+}
+
+.light-rays-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.custom-rays canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }

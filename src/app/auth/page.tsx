@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function AuthIndexPage() {
   return (
-    <div className="mx-auto max-w-md">
+    <div className="mx-auto min-h-[calc(100svh-6rem)] max-w-md pb-16 pt-24">
       <div className="card space-y-6 p-8 text-center">
         <div className="space-y-2">
           <span className="tag">Account</span>

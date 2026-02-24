@@ -18,7 +18,7 @@ export default function RootLayout({
       <body>
         <div className="min-h-screen bg-grid">
           <NavbarClient />
-          <main className="mx-auto w-full max-w-6xl px-6 py-12">
+          <main className="mx-auto w-full max-w-6xl px-6 pb-0 pt-0">
             {children}
           </main>
           <Footer />
