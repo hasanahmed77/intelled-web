@@ -93,6 +93,29 @@ function maybeExtractJson(content: string) {
   return trimmed;
 }
 
+function normalizeMathArtifacts(text: string) {
+  return text
+    .replace(/\u000c/g, "\\f")
+    .replace(/\u0008/g, "\\b")
+    .replace(/\u0000/g, "")
+    .replace(/\r\n/g, "\n");
+}
+
+function sanitizeStrings(value: unknown): unknown {
+  if (typeof value === "string") {
+    return normalizeMathArtifacts(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeStrings(item));
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, val]) => [key, sanitizeStrings(val)])
+    );
+  }
+  return value;
+}
+
 function resolveModelPricing(model: string) {
   if (OPENAI_INPUT_COST_PER_1M !== null && OPENAI_OUTPUT_COST_PER_1M !== null) {
     return {
@@ -233,7 +256,18 @@ async function callOpenAIJson(params: {
       );
       const content = extractMessageContent(data?.choices?.[0]?.message?.content);
       const jsonText = maybeExtractJson(content);
-      return JSON.parse(jsonText);
+      const parsedOutput = JSON.parse(jsonText);
+      const sanitizedOutput = sanitizeStrings(parsedOutput);
+      console.log(
+        "[OpenAI Output]",
+        JSON.stringify({
+          operation: params.schemaName,
+          model: OPENAI_MODEL,
+          requestId: data?.id ?? null,
+          output: sanitizedOutput
+        })
+      );
+      return sanitizedOutput;
     } catch (error) {
       clearTimeout(timeout);
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -279,6 +313,7 @@ Topic: ${topic}
 Difficulty: ${difficulty}
 Rules:
 - The question must be directly about the topic
+- For any mathematical notation, use LaTeX delimiters: inline \\( ... \\), block \\[ ... \\]
 - Return JSON only`
   });
 
@@ -337,6 +372,7 @@ Rules:
 - Preserve each original index
 - If correct: isCorrect=true, feedback="", correctAnswer=""
 - If incorrect: isCorrect=false, feedback may be brief, correctAnswer must contain a concise correct answer
+- For any mathematical notation in feedback or correctAnswer, use LaTeX delimiters: inline \\( ... \\), block \\[ ... \\]
 - Return JSON only
 
 Data:

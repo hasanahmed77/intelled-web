@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { submitAttemptAction } from "@/app/actions/worksheet";
 import { LoadingBar } from "@/components/loading-bar";
+import { MathText } from "@/components/math-text";
+import { MathAnswerInput } from "@/components/math-answer-input";
 
 type Question = {
   id: string;
@@ -83,16 +85,12 @@ export function WorksheetAttemptForm({
         {questions.map((question, index) => (
           <div key={question.id} className="space-y-3 border-b border-ink-800 pb-4 last:border-b-0 last:pb-0">
             <p className="text-sm text-muted">Question {index + 1}</p>
-            <p className="text-lg">{question.prompt}</p>
-            <input
-              className="input"
+            <MathText content={question.prompt} className="text-lg" />
+            <MathAnswerInput
               placeholder="Your answer"
               value={answers[question.id] ?? ""}
               disabled={isSubmitted}
-              readOnly={isSubmitted}
-              onChange={(event) =>
-                setAnswers((prev) => ({ ...prev, [question.id]: event.target.value }))
-              }
+              onChange={(nextValue) => setAnswers((prev) => ({ ...prev, [question.id]: nextValue }))}
             />
             {result ? (
               <div className="rounded-xl border border-ink-700 bg-ink-950/60 p-4 text-sm">
@@ -111,11 +109,14 @@ export function WorksheetAttemptForm({
                       <p className={detail.isCorrect ? "text-green-400" : "text-red-400"}>
                         {detail.isCorrect ? "Correct" : "Needs work"}
                       </p>
-                      {showFeedback ? <p className="mt-2 text-muted">{feedback}</p> : null}
+                      {showFeedback ? (
+                        <MathText content={feedback} className="mt-2 text-muted" />
+                      ) : null}
                       {showCorrectAnswer ? (
-                        <p className="mt-2 text-muted">
-                          Correct answer: {detail.correctAnswer}
-                        </p>
+                        <div className="mt-2 text-muted">
+                          <span>Correct answer: </span>
+                          <MathText content={detail.correctAnswer} className="inline" />
+                        </div>
                       ) : null}
                     </>
                   );
