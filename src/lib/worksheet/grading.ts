@@ -1,4 +1,4 @@
-import { gradeWorksheetWithOllama } from "@/lib/ollama";
+import { gradeWorksheetWithOpenAI } from "@/lib/openai";
 
 function normalize(value: string) {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
@@ -11,7 +11,7 @@ export async function gradeAnswers(params: {
     userAnswer: string;
   }[];
 }) {
-  const results = await gradeWorksheetWithOllama({
+  const results = await gradeWorksheetWithOpenAI({
     questions: params.questions.map((q) => ({
       index: q.index,
       prompt: q.prompt,
@@ -34,7 +34,7 @@ export async function gradeAnswers(params: {
       index: q.index,
       prompt: q.prompt,
       userAnswer: q.userAnswer,
-      feedback: isCorrect ? ai.feedback : ai.feedback,
+      feedback: isCorrect ? "" : ai.feedback,
       isCorrect,
       correctAnswer: isCorrect ? "" : ai.correctAnswer
     };

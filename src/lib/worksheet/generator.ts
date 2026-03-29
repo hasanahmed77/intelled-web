@@ -1,9 +1,9 @@
 import type { Difficulty, GeneratedWorksheet } from "@/lib/worksheet/types";
-import { generateWorksheetWithOllama } from "@/lib/ollama";
+import { generateWorksheetWithOpenAI } from "@/lib/openai";
 
 export async function generateWorksheet(
   topic: string,
   difficulty: Difficulty
 ): Promise<GeneratedWorksheet> {
-  return generateWorksheetWithOllama(topic, difficulty);
+  return generateWorksheetWithOpenAI(topic, difficulty);
 }

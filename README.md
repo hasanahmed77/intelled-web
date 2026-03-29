@@ -25,18 +25,16 @@ npm run dev
 
 ## Notes
 
-- Worksheets are generated via Ollama and stored with prompts only (no answers).
+- Worksheets are generated via OpenAI and stored with prompts only (no answers).
 - AI grading evaluates answers based on the question prompts and user responses.
 - Difficulty `auto` uses average attempt score thresholds:
   - 80+ → hard
   - 50-79 → medium
   - below 50 → easy
 
-## Ollama
+## OpenAI API
 
 Set the following in `.env.local`:
 
-- `OLLAMA_URL` (default `http://127.0.0.1:11434`)
-- `OLLAMA_MODEL` (example `qwen2.5:0.5b`)
-
-Note: Local Ollama will not be available on Vercel, so AI generation and grading only work locally unless you use a remote Ollama host.
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL` (example `gpt-5-mini`)
