@@ -17,13 +17,21 @@ const promptExamples = [
 ] as const;
 
 const generationSteps = [
-  "Sending your topic to the AI",
-  "Selecting the right difficulty",
-  "Generating the worksheet questions",
-  "Preparing your practice session"
+  "Sending to the AI...",
+  "AI is evaluating...",
+  "Tailoring the questions...",
+  "Please wait..."
 ] as const;
 
-export function PracticeForm({ username }: { username: string }) {
+export function PracticeForm({
+  username,
+  generationDisabled = false,
+  generationDisabledMessage = null
+}: {
+  username: string;
+  generationDisabled?: boolean;
+  generationDisabledMessage?: string | null;
+}) {
   const [state, setState] = useState<{ ok?: boolean; error?: string }>({});
   const [isPending, startTransition] = useTransition();
   const [topic, setTopic] = useState("");
@@ -45,24 +53,34 @@ export function PracticeForm({ username }: { username: string }) {
     return () => window.clearInterval(interval);
   }, []);
 
+  const isGenerating = isPending;
+
   useEffect(() => {
-    if (!isPending) {
+    if (!isGenerating) {
       setGenerationStepIndex(0);
       return;
     }
 
     const interval = window.setInterval(() => {
-      setGenerationStepIndex((current) => (current + 1) % generationSteps.length);
-    }, 1600);
+      setGenerationStepIndex((current) => Math.min(current + 1, generationSteps.length - 1));
+    }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [isPending]);
+  }, [isGenerating]);
 
   return (
     <form
-      className="space-y-4"
+      className="relative space-y-4"
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+        }
+      }}
       onSubmit={(event) => {
         event.preventDefault();
+        if (generationDisabled) {
+          return;
+        }
         const formData = new FormData(event.currentTarget);
         startTransition(async () => {
           try {
@@ -83,8 +101,24 @@ export function PracticeForm({ username }: { username: string }) {
         });
       }}
     >
+      {isGenerating ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 backdrop-blur-[3px]">
+          <div className="loading-vignette absolute inset-0" />
+          <div className="relative mx-4 flex w-full max-w-lg justify-center">
+            <div className="loading-heartbeat absolute inset-0 rounded-[1.75rem] bg-accent/10 blur-2xl" />
+            <div className="card relative w-full space-y-5 overflow-hidden px-7 py-7 text-center shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+              <LoadingBar active />
+              <p className="text-[11px] uppercase tracking-[0.24em] text-white">
+                Generating
+              </p>
+              <p className="animate-status-pulse mt-3 text-lg text-accent transition-opacity duration-500">
+                {generationSteps[generationStepIndex]}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="card space-y-4 p-6">
-        <LoadingBar active={isPending} />
         <div>
           <label className="text-sm text-muted">Topic</label>
           <div className="relative mt-2">
@@ -121,26 +155,30 @@ export function PracticeForm({ username }: { username: string }) {
             <option value="hard">Hard</option>
           </select>
         </div>
+        <div>
+          <label className="text-sm text-muted">Language</label>
+          <select name="language" className="input mt-2" defaultValue="english">
+            <option value="english">English</option>
+            <option value="bengali">Bengali</option>
+          </select>
+        </div>
         {state?.error ? <p className="text-sm text-red-400">{state.error}</p> : null}
         {state?.ok ? (
           <p className="text-sm text-accent">Generated. Redirecting...</p>
         ) : null}
       </div>
-      {isPending ? (
-        <div className="mx-auto flex max-w-md items-center justify-center">
-          <div className="rounded-2xl border border-accent/20 bg-ink-900/70 px-4 py-3 text-center text-sm text-zinc-300">
-            <p className="text-xs uppercase tracking-[0.18em] text-accent/80">Generating</p>
-            <p className="mt-2 transition-opacity duration-300">
-              {generationSteps[generationStepIndex]}
-            </p>
-          </div>
-        </div>
-      ) : null}
       <div className="flex justify-center pt-2">
-        <button className="button button-primary" type="submit" disabled={isPending}>
-          {isPending ? "Generating..." : "Go!"}
+        <button
+          className="button button-primary"
+          type="submit"
+          disabled={isPending || generationDisabled}
+        >
+          {isPending ? "Generating..." : generationDisabled ? "Can't go! :(" : "Go!"}
         </button>
       </div>
+      {generationDisabledMessage ? (
+        <p className="text-center text-sm text-accent">{generationDisabledMessage}</p>
+      ) : null}
     </form>
   );
 }

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { subscribeToPlanAction } from "@/app/actions/billing";
 import { ViewportSection } from "@/components/viewport-section";
 import { getUser } from "@/lib/auth";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
@@ -178,23 +177,30 @@ export default async function PricingPage({
                     Current plan
                   </button>
                 ) : (
-                  <form action={subscribeToPlanAction} className="mt-auto">
-                    <input type="hidden" name="planId" value={tier.id} />
+                  <div className="mt-auto space-y-3">
                     <button
-                      type="submit"
-                      className={`button w-full ${tier.highlighted ? "button-primary" : "button-dark-accent"}`}
+                      type="button"
+                      disabled
+                      className={`button w-full cursor-not-allowed opacity-60 ${tier.highlighted ? "button-primary" : "button-dark-accent"}`}
                     >
-                      {tier.cta}
+                      Coming soon
                     </button>
-                  </form>
+                    <p className="text-center text-xs text-muted">
+                      Payments are not live yet. All users are currently on Free.
+                    </p>
+                  </div>
                 )
               ) : (
-                <Link
-                  className={`mt-auto button ${tier.highlighted ? "button-primary" : "button-dark-accent"}`}
-                  href="/auth/sign-in?redirect=%2Fpricing"
+                <span
+                  className={`mt-auto inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-medium cursor-not-allowed opacity-60 ${
+                    tier.highlighted
+                      ? "border-transparent bg-accent text-ink-950"
+                      : "border-ink-700/60 bg-ink-900/80 text-accent"
+                  }`}
+                  aria-disabled="true"
                 >
-                  Sign in to subscribe
-                </Link>
+                  Coming soon
+                </span>
               )}
             </div>
           ))}

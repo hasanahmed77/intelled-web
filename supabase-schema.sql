@@ -15,6 +15,7 @@ create table if not exists worksheets (
   title text not null,
   topic text not null,
   difficulty text not null check (difficulty in ('easy', 'medium', 'hard')),
+  language text not null default 'english' check (language in ('english', 'bengali')),
   questions jsonb not null,
   created_at timestamptz not null default now()
 );

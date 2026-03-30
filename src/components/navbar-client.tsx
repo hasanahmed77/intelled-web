@@ -56,7 +56,7 @@ export function NavbarClient() {
   const profileActive = pathname === "/profile";
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
+    <header className="animate-navbar-drop fixed inset-x-0 top-0 z-50">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
@@ -82,7 +82,7 @@ export function NavbarClient() {
           <span className="text-xl leading-none">{menuOpen ? "×" : "☰"}</span>
         </button>
         <nav className="hidden items-center gap-6 text-sm lg:flex">
-          <Link className={desktopNavClass(pricingActive)} href="/pricing">
+          <Link className={desktopNavClass(pricingActive)} href="/pricing" prefetch>
             Pricing
           </Link>
           {loading ? (
@@ -90,7 +90,7 @@ export function NavbarClient() {
               Practice
             </span>
           ) : isAuthed ? (
-            <Link className={desktopNavClass(practiceActive)} href="/practice">
+            <Link className={desktopNavClass(practiceActive)} href="/practice" prefetch>
               Practice
             </Link>
           ) : (
@@ -109,6 +109,7 @@ export function NavbarClient() {
               {isAuthed ? (
                 <Link
                   href="/profile"
+                  prefetch
                   className={`flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
                     profileActive
                       ? "border-accent text-accent"
@@ -127,7 +128,7 @@ export function NavbarClient() {
       {menuOpen ? (
         <div className="relative mx-4 mt-2 rounded-2xl border border-ink-700 bg-ink-950/95 p-4 shadow-glow lg:hidden">
           <nav className="flex flex-col gap-3 text-sm">
-            <Link className={mobileNavClass(pricingActive)} href="/pricing" onClick={() => setMenuOpen(false)}>
+            <Link className={mobileNavClass(pricingActive)} href="/pricing" prefetch onClick={() => setMenuOpen(false)}>
               Pricing
             </Link>
             {loading ? (
@@ -135,7 +136,7 @@ export function NavbarClient() {
                 Practice
               </span>
             ) : isAuthed ? (
-              <Link className={mobileNavClass(practiceActive)} href="/practice" onClick={() => setMenuOpen(false)}>
+              <Link className={mobileNavClass(practiceActive)} href="/practice" prefetch onClick={() => setMenuOpen(false)}>
                 Practice
               </Link>
             ) : (
@@ -155,6 +156,7 @@ export function NavbarClient() {
                 {isAuthed ? (
                   <Link
                     href="/profile"
+                    prefetch
                     className={`flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
                       profileActive ? "border-accent text-accent" : "border-ink-700 text-white"
                     }`}

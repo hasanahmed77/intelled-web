@@ -68,6 +68,7 @@ export default async function WorksheetDetailPage({
       <WorksheetAttemptForm
         worksheetId={worksheet.id}
         difficulty={worksheet.difficulty}
+        language={worksheet.language ?? "english"}
         questions={sortedQuestions}
         submitted={Boolean(attempt)}
         initialAnswers={initialAnswers}

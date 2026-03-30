@@ -13,6 +13,7 @@ export function SignUpForm() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verificationPending, setVerificationPending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/practice";
@@ -20,9 +21,10 @@ export function SignUpForm() {
   const handle = async () => {
     setLoading(true);
     setMessage(null);
+    setVerificationPending(false);
     const supabase = createSupabaseBrowserClient();
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -36,8 +38,13 @@ export function SignUpForm() {
     if (error) {
       setMessage(error.message);
     } else {
-      router.push(redirectTo);
-      router.refresh();
+      if (data.session) {
+        router.push(redirectTo);
+        router.refresh();
+      } else {
+        setVerificationPending(true);
+        setMessage(`Check ${email} and verify your email, then log in.`);
+      }
     }
 
     setLoading(false);
@@ -81,7 +88,11 @@ export function SignUpForm() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-          {message ? <p className="text-sm text-red-400">{message}</p> : null}
+          {message ? (
+            <p className={`text-sm ${verificationPending ? "text-accent" : "text-red-400"}`}>
+              {message}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-3">
           <button className="button button-primary" onClick={handle} disabled={loading}>

@@ -1,10 +1,10 @@
 import { z } from "zod";
-import type { Difficulty, GeneratedWorksheet } from "@/lib/worksheet/types";
+import type { Difficulty, GeneratedWorksheet, WorksheetLanguage } from "@/lib/worksheet/types";
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_TIMEOUT_MS = 30000;
+const OPENAI_TIMEOUT_MS = 60000;
 
 function parseOptionalNumber(value: string | undefined) {
   if (!value || value.trim().length === 0) {
@@ -118,6 +118,13 @@ function sanitizeStrings(value: unknown): unknown {
 
 function normalizeWorksheetPrompt(prompt: string) {
   return normalizeMathArtifacts(prompt)
+    .replace(/\\text\{([^{}]+)\}/g, "$1")
+    .replace(/\\mathrm\{([^{}]+)\}/g, "$1")
+    .replace(/\\,/g, " ")
+    .replace(/\\;/g, " ")
+    .replace(/\\:/g, " ")
+    .replace(/\\!/g, "")
+    .replace(/\\ /g, " ")
     .replace(/\\\[/g, "\\(")
     .replace(/\\\]/g, "\\)")
     .replace(/\s*\n+\s*/g, " ")
@@ -279,7 +286,14 @@ async function callOpenAIJson(params: {
       return sanitizedOutput;
     } catch (error) {
       clearTimeout(timeout);
-      lastError = error instanceof Error ? error : new Error(String(error));
+      if (
+        error instanceof Error &&
+        (error.name === "AbortError" || error.message.toLowerCase().includes("aborted"))
+      ) {
+        lastError = new Error("The AI request took too long. Please try again.");
+      } else {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
       if (attempt < 2) {
         await sleep(300 * (attempt + 1));
         continue;
@@ -292,8 +306,14 @@ async function callOpenAIJson(params: {
 
 export async function generateWorksheetWithOpenAI(
   topic: string,
-  difficulty: Difficulty
+  difficulty: Difficulty,
+  language: WorksheetLanguage
 ): Promise<GeneratedWorksheet> {
+  const languageInstruction =
+    language === "bengali"
+      ? "Write the full question in Bangla. Keep formulas, symbols, and standard notation as-is. Do not mix English unless the subject explicitly requires it."
+      : "Write the full question in English. Keep formulas, symbols, and standard notation as-is.";
+
   const raw = await callOpenAIJson({
     schemaName: "worksheet_generation",
     schema: {
@@ -320,11 +340,16 @@ export async function generateWorksheetWithOpenAI(
     user: `Create exactly 1 worksheet question.
 Topic: ${topic}
 Difficulty: ${difficulty}
+Language: ${language}
 Rules:
 - The question must be directly about the topic
 - The question must be written as a single clean paragraph, not bullets or multiple lines
 - For mathematical notation, use inline LaTeX only: \\( ... \\)
 - Never use display/block LaTeX: \\[ ... \\]
+- Use LaTeX only for actual formulas, variables, fractions, powers, roots, or equations
+- Keep normal prose and simple units like m/s², s, kg, cm, %, degrees as plain text outside LaTeX when possible
+- Do not use \\text{}, \\mathrm{}, or LaTeX spacing commands like \\  inside the question
+- ${languageInstruction}
 - Return JSON only`
   });
 
@@ -334,6 +359,7 @@ Rules:
     title: topic,
     topic,
     difficulty,
+    language,
     questions: parsed.questions.map((q, index) => ({
       id: crypto.randomUUID(),
       prompt: normalizeWorksheetPrompt(q.prompt),
@@ -345,12 +371,18 @@ Rules:
 }
 
 export async function gradeWorksheetWithOpenAI(params: {
+  language: WorksheetLanguage;
   questions: {
     index: number;
     prompt: string;
     userAnswer: string;
   }[];
 }) {
+  const languageInstruction =
+    params.language === "bengali"
+      ? "Return feedback and correct answers in Bangla. Keep formulas, symbols, and standard notation as-is."
+      : "Return feedback and correct answers in English. Keep formulas, symbols, and standard notation as-is.";
+
   const raw = await callOpenAIJson({
     schemaName: "worksheet_grading",
     schema: {
@@ -384,6 +416,8 @@ Rules:
 - If correct: isCorrect=true, feedback="", correctAnswer=""
 - If incorrect: isCorrect=false, feedback may be brief, correctAnswer must contain a concise correct answer
 - For any mathematical notation in feedback or correctAnswer, use LaTeX delimiters: inline \\( ... \\), block \\[ ... \\]
+- Language: ${params.language}
+- ${languageInstruction}
 - Return JSON only
 
 Data:

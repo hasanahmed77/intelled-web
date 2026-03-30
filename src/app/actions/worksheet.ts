@@ -19,21 +19,23 @@ import { gradeAnswers } from "@/lib/worksheet/grading";
 
 const generateSchema = z.object({
   topic: z.string().min(4, "Add a more specific topic."),
-  difficulty: z.enum(["easy", "medium", "hard", "auto"])
+  difficulty: z.enum(["easy", "medium", "hard", "auto"]),
+  language: z.enum(["english", "bengali"])
 });
 
 export async function generateWorksheetsAction(formData: FormData) {
   const user = await requireUser();
   const parsed = generateSchema.safeParse({
     topic: formData.get("topic"),
-    difficulty: formData.get("difficulty")
+    difficulty: formData.get("difficulty"),
+    language: formData.get("language")
   });
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.errors[0]?.message ?? "Invalid input." };
   }
 
-  const { topic, difficulty } = parsed.data;
+  const { topic, difficulty, language } = parsed.data;
   const resolvedDifficulty =
     difficulty === "auto"
       ? await getPerformanceDifficulty(user.id)
@@ -51,7 +53,7 @@ export async function generateWorksheetsAction(formData: FormData) {
     }
 
     creditConsumed = true;
-    const worksheet = await generateWorksheet(topic, resolvedDifficulty);
+    const worksheet = await generateWorksheet(topic, resolvedDifficulty, language);
     const inserted = await insertWorksheet(user.id, worksheet);
     return { ok: true, worksheetId: inserted.id };
   } catch (error) {
@@ -69,6 +71,7 @@ export async function generateWorksheetsAction(formData: FormData) {
 const submitSchema = z.object({
   worksheetId: z.string().uuid(),
   difficulty: z.enum(["easy", "medium", "hard"]),
+  language: z.enum(["english", "bengali"]),
   questions: z
     .array(
       z.object({
@@ -92,6 +95,7 @@ const submitSchema = z.object({
 export async function submitAttemptAction(payload: {
   worksheetId: string;
   difficulty: "easy" | "medium" | "hard";
+  language: "english" | "bengali";
   questions: { index: number; prompt: string; userAnswer: string }[];
 }) {
   const user = await requireUser();
@@ -126,7 +130,10 @@ export async function submitAttemptAction(payload: {
 
   let graded;
   try {
-    graded = await gradeAnswers({ questions: parsed.data.questions });
+    graded = await gradeAnswers({
+      language: parsed.data.language,
+      questions: parsed.data.questions
+    });
   } catch (error) {
     return {
       ok: false,

@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
 import { AnimatedName } from "@/components/animated-name";
 import { PracticeForm } from "@/components/practice-form";
 import { fetchProfile } from "@/lib/profile/data";
@@ -7,8 +8,37 @@ import { ViewportSection } from "@/components/viewport-section";
 export default async function PracticePage() {
   const user = await requireUser("/practice");
   const fallbackName = (user.email ?? "user").split("@")[0];
-  const profile = await fetchProfile(user.id);
+  const [profile, billing, plans] = await Promise.all([
+    fetchProfile(user.id),
+    getCurrentSubscription(user.id),
+    listActivePlans()
+  ]);
   const displayName = profile?.full_name?.trim() || fallbackName;
+  const currentPlan =
+    plans.find((plan) => plan.id === billing.subscription.plan_id) ??
+    plans.find((plan) => plan.id === "free") ??
+    null;
+
+  let generationDisabled = false;
+  let generationDisabledMessage: string | null = null;
+
+  if (
+    billing.subscription.plan_id === "free" &&
+    currentPlan?.lifetime_worksheet_limit !== null &&
+    currentPlan?.lifetime_worksheet_limit !== undefined &&
+    billing.usage.free_worksheets_used_lifetime >= currentPlan.lifetime_worksheet_limit
+  ) {
+    generationDisabled = true;
+    generationDisabledMessage = "Free plan lifetime limit reached. Upgrade to become a legend.";
+  } else if (
+    billing.subscription.plan_id !== "free" &&
+    currentPlan?.worksheets_per_period !== null &&
+    currentPlan?.worksheets_per_period !== undefined &&
+    billing.usage.period_worksheets_used >= currentPlan.worksheets_per_period
+  ) {
+    generationDisabled = true;
+    generationDisabledMessage = "Your worksheet limit is reached for the current billing period.";
+  }
 
   return (
     <ViewportSection center>
@@ -25,7 +55,11 @@ export default async function PracticePage() {
           </p>
         </div>
 
-        <PracticeForm username={displayName} />
+        <PracticeForm
+          username={displayName}
+          generationDisabled={generationDisabled}
+          generationDisabledMessage={generationDisabledMessage}
+        />
       </div>
     </ViewportSection>
   );

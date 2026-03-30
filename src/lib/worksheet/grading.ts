@@ -1,3 +1,4 @@
+import type { WorksheetLanguage } from "@/lib/worksheet/types";
 import { gradeWorksheetWithOpenAI } from "@/lib/openai";
 
 function normalize(value: string) {
@@ -5,6 +6,7 @@ function normalize(value: string) {
 }
 
 export async function gradeAnswers(params: {
+  language: WorksheetLanguage;
   questions: {
     index: number;
     prompt: string;
@@ -12,6 +14,7 @@ export async function gradeAnswers(params: {
   }[];
 }) {
   const results = await gradeWorksheetWithOpenAI({
+    language: params.language,
     questions: params.questions.map((q) => ({
       index: q.index,
       prompt: q.prompt,

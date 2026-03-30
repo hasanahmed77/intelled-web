@@ -28,13 +28,14 @@ export async function insertWorksheet(userId: string, worksheet: GeneratedWorksh
       title: worksheet.title,
       topic: worksheet.topic,
       difficulty: worksheet.difficulty,
+      language: worksheet.language,
       questions: worksheet.questions.map((q) => ({
         id: q.id,
         prompt: q.prompt,
         order: q.order
       }))
     })
-    .select("id, title, topic, difficulty, questions")
+    .select("id, title, topic, difficulty, language, questions")
     .single();
 
   if (error || !worksheetRow) {
@@ -48,7 +49,7 @@ export async function fetchWorksheets(userId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("worksheets")
-    .select("id, title, topic, difficulty, created_at")
+    .select("id, title, topic, difficulty, language, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(10);
@@ -60,7 +61,7 @@ export async function fetchWorksheetWithQuestions(userId: string, worksheetId: s
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("worksheets")
-    .select("id, title, topic, difficulty, questions")
+    .select("id, title, topic, difficulty, language, questions")
     .eq("id", worksheetId)
     .eq("user_id", userId)
     .single();

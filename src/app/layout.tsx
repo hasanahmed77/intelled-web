@@ -28,7 +28,14 @@ export default function RootLayout({
               inlineMath: [['\\\\(', '\\\\)']],
               displayMath: [['\\\\[', '\\\\]']]
             },
-            chtml: { scale: 1 },
+            chtml: {
+              scale: 1,
+              displayOverflow: 'linebreak',
+              linebreaks: {
+                automatic: true,
+                width: 'container'
+              }
+            },
             options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
             startup: { typeset: false }
           };`}

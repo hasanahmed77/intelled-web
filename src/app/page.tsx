@@ -7,7 +7,8 @@ const points = [
   "Learn ANYTHING platform",
   "O/A Levels, SSC, HSC",
   "IELTS, GRE, SAT",
-  "School subjects"
+  "School subjects",
+  "English + Bangla"
 ];
 
 export default function HomePage() {
@@ -45,7 +46,7 @@ export default function HomePage() {
 
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl flex-col items-center justify-center py-14 sm:py-16">
           <div className="max-w-5xl text-center">
-            <h1 className="text-4xl font-semibold leading-[1.05] drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)] sm:text-5xl md:text-7xl">
+            <h1 className="animate-hero-rise text-4xl font-semibold leading-[1.05] drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)] sm:text-5xl md:text-7xl">
               <span className="bg-gradient-to-r from-accent via-yellow-300 to-white bg-clip-text text-transparent">
                 Learn Anything.
               </span>
@@ -53,12 +54,12 @@ export default function HomePage() {
               Practice Smarter.
             </h1>
 
-            <p className="mx-auto mt-5 max-w-3xl text-base text-zinc-300 drop-shadow-[0_8px_22px_rgba(0,0,0,0.7)] sm:mt-6 sm:text-lg md:text-2xl">
+            <p className="animate-hero-rise-delayed mx-auto mt-5 max-w-3xl text-base text-zinc-300 drop-shadow-[0_8px_22px_rgba(0,0,0,0.7)] sm:mt-6 sm:text-lg md:text-2xl">
               One platform for O/A Levels, SSC, HSC, IELTS, GRE, SAT, and school topics.
-              Generate focused worksheets, submit once, and get AI evaluation.
+              Generate focused worksheets in English or Bangla, submit once, and get AI evaluation.
             </p>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:mt-8 sm:gap-3">
+            <div className="animate-hero-rise-soft mt-6 flex flex-wrap items-center justify-center gap-2 sm:mt-8 sm:gap-3">
               {points.map((point) => (
                 <span
                   key={point}
@@ -69,7 +70,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <div className="animate-hero-rise-late mt-7 flex flex-wrap justify-center gap-3">
               <StartPracticeLink />
               <Link className="button button-dark-accent" href="/pricing">
                 View Pricing
@@ -78,15 +79,15 @@ export default function HomePage() {
           </div>
 
           <div className="mt-10 grid w-full max-w-5xl gap-4 md:grid-cols-3">
-            <div className="card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
+            <div className="animate-card-fade card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Generation</p>
               <p className="mt-2 text-sm text-zinc-200">Topic-specific worksheets for exact exam goals.</p>
             </div>
-            <div className="card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
+            <div className="animate-card-fade-delayed card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Evaluation</p>
               <p className="mt-2 text-sm text-zinc-200">AI checks answers and returns feedback + score.</p>
             </div>
-            <div className="card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
+            <div className="animate-card-fade-late card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Progress</p>
               <p className="mt-2 text-sm text-zinc-200">Difficulty adapts from your real submission history.</p>
             </div>

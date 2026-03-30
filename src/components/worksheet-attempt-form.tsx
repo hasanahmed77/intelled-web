@@ -22,6 +22,7 @@ type Result = {
 export function WorksheetAttemptForm({
   worksheetId,
   difficulty,
+  language,
   questions,
   submitted,
   initialAnswers,
@@ -29,6 +30,7 @@ export function WorksheetAttemptForm({
 }: {
   worksheetId: string;
   difficulty: "easy" | "medium" | "hard";
+  language: "english" | "bengali";
   questions: Question[];
   submitted: boolean;
   initialAnswers: Record<string, string>;
@@ -61,6 +63,7 @@ export function WorksheetAttemptForm({
       const payload = {
         worksheetId,
         difficulty,
+        language,
         questions: questions.map((question) => ({
           index: question.order,
           prompt: question.prompt,
