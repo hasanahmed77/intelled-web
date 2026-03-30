@@ -7,6 +7,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { LoadingBar } from "@/components/loading-bar";
 
 export function SignUpForm() {
+  const [fullName, setFullName] = useState("");
+  const [primaryLearningGoal, setPrimaryLearningGoal] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -20,7 +22,16 @@ export function SignUpForm() {
     setMessage(null);
     const supabase = createSupabaseBrowserClient();
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          primary_learning_goal: primaryLearningGoal.trim()
+        }
+      }
+    });
 
     if (error) {
       setMessage(error.message);
@@ -42,6 +53,20 @@ export function SignUpForm() {
           <p className="text-sm text-muted">Set up your account in minutes.</p>
         </div>
         <div className="space-y-4">
+          <input
+            className="input"
+            type="text"
+            placeholder="Full name"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+          />
+          <input
+            className="input"
+            type="text"
+            placeholder="What do you primarily want to learn?"
+            value={primaryLearningGoal}
+            onChange={(event) => setPrimaryLearningGoal(event.target.value)}
+          />
           <input
             className="input"
             type="email"

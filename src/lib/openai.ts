@@ -22,7 +22,7 @@ const worksheetSchema = z.object({
     z.object({
       prompt: z.preprocess((val) => String(val ?? "").trim(), z.string().min(1))
     })
-  ).length(5)
+  ).length(1)
 });
 
 const gradingSchema = z.object({
@@ -114,6 +114,15 @@ function sanitizeStrings(value: unknown): unknown {
     );
   }
   return value;
+}
+
+function normalizeWorksheetPrompt(prompt: string) {
+  return normalizeMathArtifacts(prompt)
+    .replace(/\\\[/g, "\\(")
+    .replace(/\\\]/g, "\\)")
+    .replace(/\s*\n+\s*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function resolveModelPricing(model: string) {
@@ -294,8 +303,8 @@ export async function generateWorksheetWithOpenAI(
       properties: {
         questions: {
           type: "array",
-          minItems: 5,
-          maxItems: 5,
+          minItems: 1,
+          maxItems: 1,
           items: {
             type: "object",
             additionalProperties: false,
@@ -308,12 +317,14 @@ export async function generateWorksheetWithOpenAI(
       }
     },
     system: "You generate concise, high-quality worksheet questions. Output must follow the required JSON schema exactly.",
-    user: `Create exactly 5 worksheet questions.
+    user: `Create exactly 1 worksheet question.
 Topic: ${topic}
 Difficulty: ${difficulty}
 Rules:
 - The question must be directly about the topic
-- For any mathematical notation, use LaTeX delimiters: inline \\( ... \\), block \\[ ... \\]
+- The question must be written as a single clean paragraph, not bullets or multiple lines
+- For mathematical notation, use inline LaTeX only: \\( ... \\)
+- Never use display/block LaTeX: \\[ ... \\]
 - Return JSON only`
   });
 
@@ -325,7 +336,7 @@ Rules:
     difficulty,
     questions: parsed.questions.map((q, index) => ({
       id: crypto.randomUUID(),
-      prompt: q.prompt,
+      prompt: normalizeWorksheetPrompt(q.prompt),
       answer: "",
       feedback: "",
       order: index + 1

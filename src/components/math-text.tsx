@@ -26,6 +26,10 @@ export function MathText({
     .replace(/^\s*[.。．]\s*$/gm, "")
     .replace(/(\\\)|\\\]|[A-Za-z0-9}])\s*\n+\s*([.,;:!?])/g, "$1$2")
     .replace(/\n{3,}/g, "\n\n")
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/[^\S\n]*\n[^\S\n]*/g, " ").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n\n")
     .trim();
 
   useEffect(() => {
@@ -51,7 +55,7 @@ export function MathText({
     <div
       ref={elementRef}
       suppressHydrationWarning
-      className={`whitespace-pre-wrap break-words ${className}`.trim()}
+      className={`whitespace-normal break-words ${className}`.trim()}
     >
       {normalizedContent}
     </div>

@@ -129,12 +129,12 @@ export function WorksheetAttemptForm({
 
       {error ? <p className="text-sm text-red-400">ERROR:{error}</p> : null}
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center justify-center gap-4 text-center">
         {isSubmitted ? (
           <span className="text-sm text-muted">Submitted</span>
         ) : (
           <button className="button button-primary" onClick={handleSubmit} disabled={isPending}>
-            {isPending ? "Submitting..." : "Submit answers"}
+            {isPending ? "Evaluating..." : "Evaluate"}
           </button>
         )}
         {result ? (

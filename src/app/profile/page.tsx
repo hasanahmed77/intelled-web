@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { cancelSubscriptionAction } from "@/app/actions/billing";
 import { requireUser } from "@/lib/auth";
+import { AnimatedName } from "@/components/animated-name";
+import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
+import { fetchProfile } from "@/lib/profile/data";
 import { fetchAttempts, fetchWorksheets } from "@/lib/worksheet/data";
 import { ViewportSection } from "@/components/viewport-section";
 
@@ -16,17 +19,17 @@ export default async function ProfilePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const resolvedSearchParams = await searchParams;
-  const billingStatus =
-    typeof resolvedSearchParams.billing === "string" ? resolvedSearchParams.billing : null;
+  await searchParams;
   const user = await requireUser("/profile");
-  const username = (user.email ?? "user").split("@")[0];
-  const [attempts, worksheets, billing, plans] = await Promise.all([
+  const fallbackName = (user.email ?? "user").split("@")[0];
+  const [attempts, worksheets, billing, plans, profile] = await Promise.all([
     fetchAttempts(user.id),
     fetchWorksheets(user.id),
     getCurrentSubscription(user.id),
-    listActivePlans()
+    listActivePlans(),
+    fetchProfile(user.id)
   ]);
+  const displayName = profile?.full_name?.trim() || fallbackName;
   const completedWorksheetIds = new Set(
     attempts
       .map((attempt) => attempt.worksheet_id)
@@ -53,15 +56,16 @@ export default async function ProfilePage({
 
   return (
     <ViewportSection innerClassName="space-y-10 pt-6 pb-20">
-      {billingStatus ? (
-        <div className="card p-4 text-sm text-zinc-200">
-          Billing status: {billingStatus.replaceAll("_", " ")}
-        </div>
-      ) : null}
       <div className="space-y-2">
         <span className="tag">Profile</span>
-        <h1 className="text-3xl font-semibold">{toTitleCase(username)}</h1>
-        <p className="text-muted">Track how your worksheets are improving over time.</p>
+        <h1 className="text-3xl font-semibold">
+          <AnimatedName name={displayName} />
+        </h1>
+        <p className="text-muted">
+          {profile?.primary_learning_goal?.trim()
+            ? `Focused on ${profile.primary_learning_goal}.`
+            : "Track how your worksheets are improving over time."}
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -132,14 +136,13 @@ export default async function ProfilePage({
                 Cancel Scheduled
               </span>
             ) : (
-              <form action={cancelSubscriptionAction}>
-                <button
-                  type="submit"
-                  className="button border-red-500/50 text-red-300 hover:border-red-400 hover:text-red-200"
-                >
-                  Cancel subscription
-                </button>
-              </form>
+              <ConfirmActionForm
+                action={cancelSubscriptionAction}
+                title="Cancel subscription?"
+                message="Your subscription will stay active until the current billing period ends, and auto-renew will be turned off."
+                buttonLabel="Cancel subscription"
+                className="button border-red-500/50 text-red-300 hover:border-red-400 hover:text-red-200"
+              />
             )}
           </div>
         ) : null}

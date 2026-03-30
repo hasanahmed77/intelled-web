@@ -57,6 +57,14 @@ export function SignInForm() {
             onChange={(event) => setPassword(event.target.value)}
           />
           {message ? <p className="text-sm text-red-400">{message}</p> : null}
+          <div className="flex justify-end">
+            <Link
+              className="text-sm text-muted transition hover:text-accent"
+              href="/auth/forgot-password"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
         <div className="flex flex-col gap-3">
           <button className="button button-primary" onClick={handle} disabled={loading}>

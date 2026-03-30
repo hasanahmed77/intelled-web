@@ -3,6 +3,10 @@
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { consumeWorksheetCredit, refundWorksheetCredit } from "@/lib/billing/data";
+import {
+  getMaxTotalAnswerCharacters,
+  MAX_ANSWER_CHARACTERS
+} from "@/lib/worksheet/limits";
 import { generateWorksheet } from "@/lib/worksheet/generator";
 import type { DifficultySelection } from "@/lib/worksheet/types";
 import {
@@ -72,7 +76,13 @@ const submitSchema = z.object({
         prompt: z.string().min(1),
         userAnswer: z.preprocess(
           (val) => String(val ?? "").trim(),
-          z.string().min(1, "All questions must have an answer.")
+          z
+            .string()
+            .min(1, "All questions must have an answer.")
+            .max(
+              MAX_ANSWER_CHARACTERS,
+              `Each answer must be ${MAX_ANSWER_CHARACTERS} characters or fewer.`
+            )
         )
       })
     )
@@ -90,6 +100,19 @@ export async function submitAttemptAction(payload: {
     return {
       ok: false,
       error: parsed.error.errors[0]?.message ?? "Check your answers and try again."
+    };
+  }
+
+  const totalAnswerCharacters = parsed.data.questions.reduce(
+    (sum, question) => sum + question.userAnswer.length,
+    0
+  );
+  const maxTotalAnswerCharacters = getMaxTotalAnswerCharacters(parsed.data.questions.length);
+
+  if (totalAnswerCharacters > maxTotalAnswerCharacters) {
+    return {
+      ok: false,
+      error: `Your submission is too long. Keep the total under ${maxTotalAnswerCharacters} characters.`
     };
   }
 

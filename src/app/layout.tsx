@@ -28,14 +28,14 @@ export default function RootLayout({
               inlineMath: [['\\\\(', '\\\\)']],
               displayMath: [['\\\\[', '\\\\]']]
             },
-            svg: { fontCache: 'global' },
+            chtml: { scale: 1 },
             options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
             startup: { typeset: false }
           };`}
         </Script>
         <Script
           id="mathjax-lib"
-          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
           strategy="afterInteractive"
         />
         <Script
