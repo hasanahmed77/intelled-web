@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { consumeWorksheetCredit, refundWorksheetCredit } from "@/lib/billing/data";
 import { generateWorksheet } from "@/lib/worksheet/generator";
 import type { DifficultySelection } from "@/lib/worksheet/types";
 import {
@@ -34,11 +35,26 @@ export async function generateWorksheetsAction(formData: FormData) {
       ? await getPerformanceDifficulty(user.id)
       : (difficulty as Exclude<DifficultySelection, "auto">);
 
+  let creditConsumed = false;
+
   try {
+    const credit = await consumeWorksheetCredit(user.id);
+    if (!credit.ok) {
+      return {
+        ok: false,
+        error: credit.message ?? "Unable to generate worksheet."
+      };
+    }
+
+    creditConsumed = true;
     const worksheet = await generateWorksheet(topic, resolvedDifficulty);
     const inserted = await insertWorksheet(user.id, worksheet);
     return { ok: true, worksheetId: inserted.id };
   } catch (error) {
+    if (creditConsumed) {
+      await refundWorksheetCredit(user.id);
+    }
+
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Failed to generate worksheet."

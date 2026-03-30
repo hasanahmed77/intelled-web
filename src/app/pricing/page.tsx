@@ -1,10 +1,26 @@
 import Link from "next/link";
+import { subscribeToPlanAction } from "@/app/actions/billing";
 import { ViewportSection } from "@/components/viewport-section";
+import { getUser } from "@/lib/auth";
+import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
+import type { BillingPlanId } from "@/lib/billing/types";
 
-const tiers = [
+type Tier = {
+  id: Exclude<BillingPlanId, "free">;
+  name: string;
+  cadence: string;
+  credits: string;
+  description: string;
+  badge: string | null;
+  highlighted: boolean;
+  features: string[];
+  cta: string;
+};
+
+const tiers: Tier[] = [
   {
+    id: "weekly",
     name: "Weekly",
-    price: "৳129",
     cadence: "/ week",
     credits: "12 worksheets",
     description: "Fast start for short prep sprints.",
@@ -18,8 +34,8 @@ const tiers = [
     cta: "Start weekly"
   },
   {
+    id: "monthly",
     name: "Monthly",
-    price: "৳349",
     cadence: "/ month",
     credits: "50 worksheets",
     description: "Best balance for consistent students.",
@@ -33,8 +49,8 @@ const tiers = [
     cta: "Choose monthly"
   },
   {
+    id: "yearly",
     name: "Yearly",
-    price: "৳3,699",
     cadence: "/ year",
     credits: "600 worksheets / year",
     description: "Lower yearly rate for long-term learners.",
@@ -49,24 +65,80 @@ const tiers = [
   }
 ];
 
-export default function PricingPage() {
+export default async function PricingPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const billingStatus =
+    typeof resolvedSearchParams.billing === "string" ? resolvedSearchParams.billing : null;
+  const user = await getUser();
+  const plans = await listActivePlans().catch(() => []);
+  const billing = user
+    ? await getCurrentSubscription(user.id).catch(() => ({ subscription: null, usage: null }))
+    : { subscription: null, usage: null };
+
+  const currentPlanId = billing.subscription?.plan_id ?? "free";
+  const planPriceById = new Map(plans.map((plan) => [plan.id, plan.price_bdt]));
+  const currentPlan =
+    plans.find((plan) => plan.id === currentPlanId) ??
+    plans.find((plan) => plan.id === "free") ??
+    null;
+  const currentLimit =
+    currentPlanId === "free"
+      ? (currentPlan?.lifetime_worksheet_limit ?? 3)
+      : currentPlan?.worksheets_per_period ?? null;
+  const currentUsed =
+    currentPlanId === "free"
+      ? (billing.usage?.free_worksheets_used_lifetime ?? 0)
+      : (billing.usage?.period_worksheets_used ?? 0);
+
   return (
     <ViewportSection center>
       <div className="w-full space-y-12">
+        {billingStatus ? (
+          <div className="card p-4 text-sm text-zinc-200">
+            Billing status: {billingStatus.replaceAll("_", " ")}
+          </div>
+        ) : null}
         <div className="space-y-4 text-center">
           <span className="tag">Pricing</span>
           <h1 className="text-4xl font-semibold">Simple plans, clear value.</h1>
           <p className="mx-auto max-w-2xl text-muted">
-            Every plan includes AI worksheet generation, submission grading, and adaptive
-            performance tracking. Extra usage: ৳6 per worksheet.
+            Every account starts on Free with 3 worksheets for life. Paid plans unlock
+            recurring worksheet quotas, AI grading, and adaptive performance tracking.
           </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="card p-6">
+            <p className="text-sm text-muted">Current plan</p>
+            <p className="mt-3 text-3xl font-semibold capitalize">{currentPlanId}</p>
+          </div>
+          <div className="card p-6">
+            <p className="text-sm text-muted">
+              {currentPlanId === "free" ? "Free worksheets used" : "Plan worksheets used"}
+            </p>
+            <p className="mt-3 text-3xl font-semibold">
+              {currentUsed}
+              {currentLimit !== null ? ` / ${currentLimit}` : ""}
+            </p>
+          </div>
+          <div className="card p-6">
+            <p className="text-sm text-muted">Recurring mode</p>
+            <p className="mt-3 text-3xl font-semibold">
+              {billing.subscription?.auto_renew ? "On" : "Off"}
+            </p>
+          </div>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           {tiers.map((tier) => (
             <div
               key={tier.name}
               className={`card relative flex flex-col gap-6 p-6 ${
-                tier.highlighted ? "border-accent shadow-[0_0_40px_rgba(255,214,10,0.18)]" : ""
+                currentPlanId === tier.id || tier.highlighted
+                  ? "border-accent shadow-[0_0_40px_rgba(255,214,10,0.18)]"
+                  : ""
               }`}
             >
               {tier.badge ? (
@@ -86,7 +158,8 @@ export default function PricingPage() {
               </div>
               <div>
                 <p className="text-3xl font-semibold">
-                  {tier.price} <span className="text-base font-normal text-muted">{tier.cadence}</span>
+                  ৳{planPriceById.get(tier.id) ?? 0}{" "}
+                  <span className="text-base font-normal text-muted">{tier.cadence}</span>
                 </p>
                 <p className="mt-2 text-sm text-zinc-300">{tier.credits}</p>
               </div>
@@ -95,12 +168,34 @@ export default function PricingPage() {
                   <li key={feature}>• {feature}</li>
                 ))}
               </ul>
-              <Link
-                className={`mt-auto button ${tier.highlighted ? "button-primary" : "button-dark-accent"}`}
-                href="/practice"
-              >
-                {tier.cta}
-              </Link>
+              {user ? (
+                currentPlanId === tier.id ? (
+                  <button
+                    type="button"
+                    className="button mt-auto cursor-default opacity-80"
+                    disabled
+                  >
+                    Current plan
+                  </button>
+                ) : (
+                  <form action={subscribeToPlanAction} className="mt-auto">
+                    <input type="hidden" name="planId" value={tier.id} />
+                    <button
+                      type="submit"
+                      className={`button w-full ${tier.highlighted ? "button-primary" : "button-dark-accent"}`}
+                    >
+                      {tier.cta}
+                    </button>
+                  </form>
+                )
+              ) : (
+                <Link
+                  className={`mt-auto button ${tier.highlighted ? "button-primary" : "button-dark-accent"}`}
+                  href="/auth/sign-in?redirect=%2Fpricing"
+                >
+                  Sign in to subscribe
+                </Link>
+              )}
             </div>
           ))}
         </div>

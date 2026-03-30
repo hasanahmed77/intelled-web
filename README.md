@@ -6,8 +6,10 @@ Minimal, dark-themed worksheet generator built with Next.js and Supabase.
 
 1. Create a Supabase project.
 2. In the SQL editor, run the contents of `supabase-schema.sql`.
-3. Copy `.env.example` to `.env.local` and fill in your Supabase keys.
-4. Install dependencies and run the app.
+3. In the SQL editor, run the contents of `supabase-billing.sql`.
+4. Copy `.env.example` to `.env.local` and fill in your Supabase keys.
+5. Add `SUPABASE_SERVICE_ROLE_KEY` for server-only billing operations.
+6. Install dependencies and run the app.
 
 ```bash
 npm install
@@ -38,3 +40,10 @@ Set the following in `.env.local`:
 
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL` (example `gpt-5-mini`)
+
+## Billing
+
+- Every user starts on the `free` plan automatically
+- The free plan allows 3 worksheets for the lifetime of the account
+- Paid plans are modeled in Supabase and enforced during worksheet generation
+- The current implementation uses a dummy internal recurring flow so the subscription system can be tested before a real gateway such as bKash is added
