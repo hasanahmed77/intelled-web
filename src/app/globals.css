@@ -161,6 +161,29 @@ body {
   }
 }
 
+@keyframes celebration-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.78) translateY(18px);
+    filter: blur(6px);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.06) translateY(0);
+    filter: blur(0);
+  }
+  78% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96) translateY(-10px);
+    filter: blur(2px);
+  }
+}
+
 .animate-loading {
   animation: loading-slide 1.1s ease-in-out infinite;
 }
@@ -205,6 +228,10 @@ body {
   animation: status-pulse 1.8s ease-in-out infinite;
 }
 
+.animate-celebration-pop {
+  animation: celebration-pop 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .loading-vignette {
   background:
     radial-gradient(circle at center, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.45) 62%, rgba(0, 0, 0, 0.7) 100%);
@@ -221,6 +248,7 @@ body {
   .animate-card-fade-late,
   .loading-heartbeat,
   .animate-status-pulse,
+  .animate-celebration-pop,
   .animate-word-reveal,
   .animate-name-shine,
   .animate-loading {

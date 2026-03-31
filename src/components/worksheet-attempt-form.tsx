@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { submitAttemptAction } from "@/app/actions/worksheet";
+import { ConfettiBurst } from "@/components/confetti-burst";
 import { LoadingBar } from "@/components/loading-bar";
 import { MathText } from "@/components/math-text";
 import { MathAnswerInput } from "@/components/math-answer-input";
@@ -23,6 +24,7 @@ export function WorksheetAttemptForm({
   worksheetId,
   difficulty,
   language,
+  username,
   questions,
   submitted,
   initialAnswers,
@@ -31,6 +33,7 @@ export function WorksheetAttemptForm({
   worksheetId: string;
   difficulty: "easy" | "medium" | "hard";
   language: "english" | "bengali";
+  username: string;
   questions: Question[];
   submitted: boolean;
   initialAnswers: Record<string, string>;
@@ -43,6 +46,17 @@ export function WorksheetAttemptForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const hasCelebratedRef = useRef(Boolean(initialResult && initialResult.score >= 90));
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+
+  useEffect(() => {
+    if (!result || result.score < 90 || hasCelebratedRef.current) {
+      return;
+    }
+
+    hasCelebratedRef.current = true;
+    setConfettiTrigger((current) => current + 1);
+  }, [result]);
 
   const handleSubmit = () => {
     if (isSubmitted) {
@@ -83,6 +97,7 @@ export function WorksheetAttemptForm({
 
   return (
     <div className="space-y-6">
+      <ConfettiBurst triggerKey={confettiTrigger} recipientName={username} />
       <div className="card space-y-4 p-6">
         <LoadingBar active={isPending} />
         {questions.map((question, index) => (

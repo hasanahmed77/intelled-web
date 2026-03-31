@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+import { fetchProfile } from "@/lib/profile/data";
 import { fetchAttemptByWorksheet, fetchWorksheetWithQuestions } from "@/lib/worksheet/data";
 import { WorksheetAttemptForm } from "@/components/worksheet-attempt-form";
 import { ViewportSection } from "@/components/viewport-section";
@@ -17,10 +18,13 @@ export default async function WorksheetDetailPage({
 }) {
   const { id } = await params;
   const user = await requireUser(`/practice/${id}`);
-  const [worksheet, attempt] = await Promise.all([
+  const fallbackName = (user.email ?? "user").split("@")[0];
+  const [worksheet, attempt, profile] = await Promise.all([
     fetchWorksheetWithQuestions(user.id, id),
-    fetchAttemptByWorksheet(user.id, id)
+    fetchAttemptByWorksheet(user.id, id),
+    fetchProfile(user.id)
   ]);
+  const displayName = profile?.full_name?.trim() || fallbackName;
 
   if (!worksheet) {
     notFound();
@@ -69,6 +73,7 @@ export default async function WorksheetDetailPage({
         worksheetId={worksheet.id}
         difficulty={worksheet.difficulty}
         language={worksheet.language ?? "english"}
+        username={displayName}
         questions={sortedQuestions}
         submitted={Boolean(attempt)}
         initialAnswers={initialAnswers}

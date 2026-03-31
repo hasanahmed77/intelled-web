@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateWorksheetsAction } from "@/app/actions/worksheet";
+import { ConfettiBurst } from "@/components/confetti-burst";
 import { LoadingBar } from "@/components/loading-bar";
 
 const promptExamples = [
@@ -17,10 +18,10 @@ const promptExamples = [
 ] as const;
 
 const generationSteps = [
-  "Sending to the AI...",
-  "AI is evaluating...",
-  "Tailoring the questions...",
-  "Please wait..."
+  "Sending topic to the AI...",
+  "Generating questions...",
+  "Personalizing...",
+  "Please Wait..."
 ] as const;
 
 export function PracticeForm({
@@ -39,6 +40,7 @@ export function PracticeForm({
   const [generationStepIndex, setGenerationStepIndex] = useState(0);
   const [isHintVisible, setIsHintVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -101,6 +103,7 @@ export function PracticeForm({
         });
       }}
     >
+      <ConfettiBurst triggerKey={confettiTrigger} recipientName={username} />
       {isGenerating ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 backdrop-blur-[3px]">
           <div className="loading-vignette absolute inset-0" />
@@ -167,7 +170,7 @@ export function PracticeForm({
           <p className="text-sm text-accent">Generated. Redirecting...</p>
         ) : null}
       </div>
-      <div className="flex justify-center pt-2">
+      <div className="flex justify-center gap-3 pt-2">
         <button
           className="button button-primary"
           type="submit"
