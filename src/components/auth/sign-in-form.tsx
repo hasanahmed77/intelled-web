@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { LoadingBar } from "@/components/loading-bar";
 
 export function SignInForm() {
@@ -70,6 +71,7 @@ export function SignInForm() {
           <button className="button button-primary" onClick={handle} disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
           </button>
+          <GoogleAuthButton redirectTo={redirectTo} />
           <Link className="button" href={`/auth/sign-up?redirect=${encodeURIComponent(redirectTo)}`}>
             Create account
           </Link>
