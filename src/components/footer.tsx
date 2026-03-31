@@ -28,7 +28,7 @@ export function Footer() {
           <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">Legal</p>
           <Link className="block hover:text-accent" href="/privacy">Privacy</Link>
           <Link className="block hover:text-accent" href="/terms">Terms</Link>
-          <p className="pt-2 text-xs text-zinc-500">© {new Date().getFullYear()} intellED</p>
+          <p className="pt-2 text-xs text-zinc-500">© 2026 intellED</p>
         </div>
       </div>
     </footer>

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { BillingPlan, BillingPlanId, UsageCounter, UserSubscription } from "@/lib/billing/types";
 
@@ -358,25 +359,29 @@ async function refreshSubscriptionStateDirect(userId: string) {
   };
 }
 
-export async function listActivePlans() {
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("billing_plans")
-    .select(
-      "id, name, interval, price_bdt, duration_days, worksheets_per_period, lifetime_worksheet_limit, active"
-    )
-    .eq("active", true)
-    .order("price_bdt", { ascending: true });
+export const listActivePlans = unstable_cache(
+  async (): Promise<BillingPlan[]> => {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("billing_plans")
+      .select(
+        "id, name, interval, price_bdt, duration_days, worksheets_per_period, lifetime_worksheet_limit, active"
+      )
+      .eq("active", true)
+      .order("price_bdt", { ascending: true });
 
-  if (error) {
-    if (isBillingSchemaUnavailable(error.message)) {
-      return FALLBACK_PLANS;
+    if (error) {
+      if (isBillingSchemaUnavailable(error.message)) {
+        return FALLBACK_PLANS;
+      }
+      throw new Error(error.message);
     }
-    throw new Error(error.message);
-  }
 
-  return ((data ?? []) as BillingPlan[]).length > 0 ? ((data ?? []) as BillingPlan[]) : FALLBACK_PLANS;
-}
+    return ((data ?? []) as BillingPlan[]).length > 0 ? ((data ?? []) as BillingPlan[]) : FALLBACK_PLANS;
+  },
+  ["billing-plans"],
+  { revalidate: 3600, tags: ["billing-plans"] }
+);
 
 export async function getCurrentSubscription(userId: string) {
   try {

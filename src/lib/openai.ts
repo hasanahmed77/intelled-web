@@ -22,7 +22,7 @@ const worksheetSchema = z.object({
     z.object({
       prompt: z.preprocess((val) => String(val ?? "").trim(), z.string().min(1))
     })
-  ).length(1)
+  ).length(5)
 });
 
 const gradingSchema = z.object({
@@ -323,8 +323,8 @@ export async function generateWorksheetWithOpenAI(
       properties: {
         questions: {
           type: "array",
-          minItems: 1,
-          maxItems: 1,
+          minItems: 5,
+          maxItems: 5,
           items: {
             type: "object",
             additionalProperties: false,
@@ -337,7 +337,7 @@ export async function generateWorksheetWithOpenAI(
       }
     },
     system: "You generate concise, high-quality problem set questions. Output must follow the required JSON schema exactly.",
-    user: `Create exactly 1 problem set question.
+    user: `Create exactly 5 problem set questions.
 Topic: ${topic}
 Difficulty: ${difficulty}
 Language: ${language}

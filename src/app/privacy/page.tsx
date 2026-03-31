@@ -7,7 +7,7 @@ export default function PrivacyPage() {
         <div className="space-y-3">
           <span className="tag">Privacy</span>
           <h1 className="text-4xl font-semibold">Privacy Policy</h1>
-          <p className="text-sm text-muted">Last updated: {new Date().getFullYear()}</p>
+          <p className="text-sm text-muted">Last updated: 2026</p>
         </div>
 
         <div className="card space-y-6 p-6 text-sm leading-7 text-muted">

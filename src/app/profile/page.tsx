@@ -171,7 +171,6 @@ export default async function ProfilePage({
                   </span>
                 </div>
               </div>
-              <p className="mt-2 text-sm text-muted">{worksheet.topic}</p>
               <p className="mt-4 text-xs text-muted">
                 Created {new Date(worksheet.created_at).toLocaleDateString()}
               </p>

@@ -67,7 +67,6 @@ export default async function WorksheetDetailPage({
       <div className="space-y-2">
         <span className="tag">{worksheet.difficulty} difficulty</span>
         <h1 className="text-3xl font-semibold">{toTitleCase(worksheet.title)}</h1>
-        <p className="text-muted">{worksheet.topic}</p>
       </div>
       <WorksheetAttemptForm
         worksheetId={worksheet.id}

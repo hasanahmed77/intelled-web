@@ -13,15 +13,17 @@ const points = [
 
 export default function HomePage() {
   return (
-    <div className="relative w-full bg-black text-white">
+    <div className="relative w-screen bg-black text-white" style={{ marginLeft: "calc(50% - 50vw)" }}>
       <section className="relative min-h-[100svh] overflow-hidden px-4 py-0 sm:px-6 md:px-12">
         <div className="pointer-events-none absolute inset-0">
           <Image
             src="/images/robot-yellow-more.jpg"
             alt="Robot hero background"
-            width={1150}
-            height={720}
-            className="absolute bottom-[-4%] left-1/2 z-0 w-[980px] max-w-[98vw] -translate-x-1/2 opacity-45 sm:w-[1100px] md:bottom-[-6%] md:w-[1150px] md:max-w-[96vw] md:opacity-65"
+            width={1920}
+            height={1080}
+            loading="eager"
+            priority
+            className="absolute bottom-[-4%] left-1/2 z-0 w-[980px] -translate-x-1/2 mix-blend-screen opacity-40 sm:w-[1100px] md:bottom-[-6%] md:w-[1150px] md:opacity-55"
           />
           <LightRays
             raysOrigin="top-center"
