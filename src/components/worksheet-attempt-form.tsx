@@ -46,7 +46,7 @@ export function WorksheetAttemptForm({
 
   const handleSubmit = () => {
     if (isSubmitted) {
-      setError("This worksheet has already been submitted.");
+      setError("This problem set has already been submitted.");
       return;
     }
 

@@ -47,7 +47,7 @@ export default async function ProfilePage({
     null;
   const currentLimit =
     currentPlanId === "free"
-      ? (currentPlan?.lifetime_worksheet_limit ?? 3)
+      ? (currentPlan?.lifetime_worksheet_limit ?? 2)
       : currentPlan?.worksheets_per_period ?? null;
   const currentUsed =
     currentPlanId === "free"
@@ -64,7 +64,7 @@ export default async function ProfilePage({
         <p className="text-muted">
           {profile?.primary_learning_goal?.trim()
             ? `Focused on ${profile.primary_learning_goal}.`
-            : "Track how your worksheets are improving over time."}
+            : "Track how your problem sets are improving over time."}
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export default async function ProfilePage({
           <p className="mt-3 text-3xl font-semibold">{average}%</p>
         </div>
         <div className="card p-6">
-          <p className="text-sm text-muted">Worksheets generated</p>
+          <p className="text-sm text-muted">Problem sets generated</p>
           <p className="mt-3 text-3xl font-semibold">{worksheets.length}</p>
         </div>
         <div className="card p-6">
@@ -87,21 +87,15 @@ export default async function ProfilePage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm text-muted">Subscription</p>
-            <h2 className="mt-2 text-2xl font-semibold capitalize">
+            <h2 className="mt-2 text-2xl font-semibold uppercase">
               {billing.subscription?.plan_id ?? "free"}
             </h2>
           </div>
           <span className="rounded-full border border-ink-700 px-3 py-1 text-xs uppercase tracking-[0.16em] text-zinc-300">
-            {billing.subscription?.status ?? "active"}
+            {(billing.subscription?.status ?? "active").toUpperCase()}
           </span>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          <div>
-            <p className="text-sm text-muted">Provider</p>
-            <p className="mt-2 text-lg font-medium uppercase">
-              {billing.subscription?.provider ?? "internal"}
-            </p>
-          </div>
+        <div className="grid gap-4 md:grid-cols-3">
           <div>
             <p className="text-sm text-muted">Period ends</p>
             <p className="mt-2 text-lg font-medium">
@@ -113,12 +107,12 @@ export default async function ProfilePage({
           <div>
             <p className="text-sm text-muted">Auto renew</p>
             <p className="mt-2 text-lg font-medium">
-              {billing.subscription?.auto_renew ? "Enabled" : "Disabled"}
+              {billing.subscription?.auto_renew ? "ENABLED" : "DISABLED"}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted">
-              {currentPlanId === "free" ? "Free lifetime used" : "Plan worksheets used"}
+              {currentPlanId === "free" ? "Free lifetime used" : "Plan problem sets used"}
             </p>
             <p className="mt-2 text-lg font-medium">
               {currentUsed}
@@ -150,7 +144,7 @@ export default async function ProfilePage({
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Recent worksheets</h2>
+          <h2 className="text-xl font-semibold">Recent problem sets</h2>
           <span className="text-sm text-muted">{worksheets.length} total</span>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -185,7 +179,7 @@ export default async function ProfilePage({
           ))}
           {worksheets.length === 0 ? (
             <div className="card p-6 text-sm text-muted">
-              No worksheets yet. Generate your first worksheet from Practice.
+              No problem sets yet. Generate your first problem set from Practice.
             </div>
           ) : null}
         </div>

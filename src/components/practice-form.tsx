@@ -13,7 +13,7 @@ const promptExamples = [
   "GRE math quantitative drills",
   "IELTS writing task structure",
   "SSC physics electricity basics",
-  "HSC biology genetics worksheet"
+  "HSC biology genetics problem set"
 ] as const;
 
 const generationSteps = [

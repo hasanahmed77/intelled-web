@@ -124,7 +124,7 @@ export async function submitAttemptAction(payload: {
   if (existingAttempt) {
     return {
       ok: false,
-      error: "This worksheet has already been submitted."
+      error: "This problem set has already been submitted."
     };
   }
 

@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "intellED",
-  description: "Generate personalized worksheets with adaptive difficulty.",
+  description: "Generate personalized problem sets with adaptive difficulty.",
   icons: {
     icon: "/brand/logo.svg",
     shortcut: "/brand/logo.svg",

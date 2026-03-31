@@ -13,7 +13,7 @@ const points = [
 
 export default function HomePage() {
   return (
-    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-black text-white">
+    <div className="relative w-full bg-black text-white">
       <section className="relative min-h-[100svh] overflow-hidden px-4 py-0 sm:px-6 md:px-12">
         <div className="pointer-events-none absolute inset-0">
           <Image
@@ -56,7 +56,7 @@ export default function HomePage() {
 
             <p className="animate-hero-rise-delayed mx-auto mt-5 max-w-3xl text-base text-zinc-300 drop-shadow-[0_8px_22px_rgba(0,0,0,0.7)] sm:mt-6 sm:text-lg md:text-2xl">
               One platform for O/A Levels, SSC, HSC, IELTS, GRE, SAT, and school topics.
-              Generate focused worksheets in English or Bangla, submit once, and get AI evaluation.
+              Generate focused problem sets in English or Bangla, submit once, and get AI evaluation.
             </p>
 
             <div className="animate-hero-rise-soft mt-6 flex flex-wrap items-center justify-center gap-2 sm:mt-8 sm:gap-3">
@@ -81,7 +81,7 @@ export default function HomePage() {
           <div className="mt-10 grid w-full max-w-5xl gap-4 md:grid-cols-3">
             <div className="animate-card-fade card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Generation</p>
-              <p className="mt-2 text-sm text-zinc-200">Topic-specific worksheets for exact exam goals.</p>
+              <p className="mt-2 text-sm text-zinc-200">Topic-specific problem sets for exact exam goals.</p>
             </div>
             <div className="animate-card-fade-delayed card card-cracked p-5 shadow-[0_18px_36px_rgba(0,0,0,0.45)]">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Evaluation</p>

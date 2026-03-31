@@ -39,7 +39,7 @@ export async function insertWorksheet(userId: string, worksheet: GeneratedWorksh
     .single();
 
   if (error || !worksheetRow) {
-    throw new Error(error?.message ?? "Failed to create worksheet");
+    throw new Error(error?.message ?? "Failed to create problem set");
   }
 
   return worksheetRow;
@@ -118,7 +118,7 @@ export async function createAttempt(params: {
 
   if (error || !attempt) {
     if (error?.code === "23505") {
-      throw new Error("This worksheet has already been submitted.");
+      throw new Error("This problem set has already been submitted.");
     }
     throw new Error(error?.message ?? "Failed to create attempt");
   }

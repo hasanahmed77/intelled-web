@@ -37,7 +37,7 @@ export default async function PracticePage() {
     billing.usage.period_worksheets_used >= currentPlan.worksheets_per_period
   ) {
     generationDisabled = true;
-    generationDisabledMessage = "Your worksheet limit is reached for the current billing period.";
+    generationDisabledMessage = "Your problem set limit is reached for the current billing period.";
   }
 
   return (
@@ -51,7 +51,7 @@ export default async function PracticePage() {
           </h1>
           <p className="text-muted">
             Enter a topic and choose a difficulty. Auto uses your performance history to
-            tune the worksheet level.
+            tune the problem set level.
           </p>
         </div>
 

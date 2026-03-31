@@ -11,9 +11,11 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   @apply bg-ink-950 text-white font-display antialiased;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .bg-grid {

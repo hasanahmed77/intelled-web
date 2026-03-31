@@ -336,8 +336,8 @@ export async function generateWorksheetWithOpenAI(
         }
       }
     },
-    system: "You generate concise, high-quality worksheet questions. Output must follow the required JSON schema exactly.",
-    user: `Create exactly 1 worksheet question.
+    system: "You generate concise, high-quality problem set questions. Output must follow the required JSON schema exactly.",
+    user: `Create exactly 1 problem set question.
 Topic: ${topic}
 Difficulty: ${difficulty}
 Language: ${language}

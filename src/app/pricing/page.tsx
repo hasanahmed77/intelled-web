@@ -21,12 +21,12 @@ const tiers: Tier[] = [
     id: "weekly",
     name: "Weekly",
     cadence: "/ week",
-    credits: "12 worksheets",
+    credits: "12 problem sets",
     description: "Fast start for short prep sprints.",
     badge: null,
     highlighted: false,
     features: [
-      "AI worksheet generation + grading",
+      "AI problem set generation + grading",
       "Progress tracking",
       "Basic support"
     ],
@@ -36,7 +36,7 @@ const tiers: Tier[] = [
     id: "monthly",
     name: "Monthly",
     cadence: "/ month",
-    credits: "50 worksheets",
+    credits: "50 problem sets",
     description: "Best balance for consistent students.",
     badge: "Most Popular",
     highlighted: true,
@@ -51,7 +51,7 @@ const tiers: Tier[] = [
     id: "yearly",
     name: "Yearly",
     cadence: "/ year",
-    credits: "600 worksheets / year",
+    credits: "600 problem sets / year",
     description: "Lower yearly rate for long-term learners.",
     badge: "Save 12%",
     highlighted: false,
@@ -86,7 +86,7 @@ export default async function PricingPage({
     null;
   const currentLimit =
     currentPlanId === "free"
-      ? (currentPlan?.lifetime_worksheet_limit ?? 3)
+      ? (currentPlan?.lifetime_worksheet_limit ?? 2)
       : currentPlan?.worksheets_per_period ?? null;
   const currentUsed =
     currentPlanId === "free"
@@ -105,18 +105,18 @@ export default async function PricingPage({
           <span className="tag">Pricing</span>
           <h1 className="text-4xl font-semibold">Simple plans, clear value.</h1>
           <p className="mx-auto max-w-2xl text-muted">
-            Every account starts on Free with 3 worksheets for life. Paid plans unlock
-            recurring worksheet quotas, AI grading, and adaptive performance tracking.
+            Every account starts on Free with 2 problem sets for life. Paid plans unlock
+            recurring problem set quotas, AI grading, and adaptive performance tracking.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="card p-6">
             <p className="text-sm text-muted">Current plan</p>
-            <p className="mt-3 text-3xl font-semibold capitalize">{currentPlanId}</p>
+            <p className="mt-3 text-3xl font-semibold uppercase">{currentPlanId}</p>
           </div>
           <div className="card p-6">
             <p className="text-sm text-muted">
-              {currentPlanId === "free" ? "Free worksheets used" : "Plan worksheets used"}
+              {currentPlanId === "free" ? "Free problem sets used" : "Plan problem sets used"}
             </p>
             <p className="mt-3 text-3xl font-semibold">
               {currentUsed}
@@ -126,7 +126,7 @@ export default async function PricingPage({
           <div className="card p-6">
             <p className="text-sm text-muted">Recurring mode</p>
             <p className="mt-3 text-3xl font-semibold">
-              {billing.subscription?.auto_renew ? "On" : "Off"}
+              {billing.subscription?.auto_renew ? "ON" : "OFF"}
             </p>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default async function PricingPage({
                 </span>
               ) : null}
               <div>
-                <h2 className="text-2xl font-semibold">{tier.name}</h2>
+                <h2 className="text-2xl font-semibold uppercase">{tier.name}</h2>
                 <p className="mt-2 text-muted">{tier.description}</p>
               </div>
               <div>

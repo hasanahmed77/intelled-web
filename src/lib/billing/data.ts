@@ -11,7 +11,7 @@ const FALLBACK_PLANS: BillingPlan[] = [
     price_bdt: 0,
     duration_days: 0,
     worksheets_per_period: null,
-    lifetime_worksheet_limit: 3,
+    lifetime_worksheet_limit: 2,
     active: true
   },
   {

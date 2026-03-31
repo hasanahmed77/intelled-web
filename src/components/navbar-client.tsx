@@ -19,6 +19,8 @@ function mobileNavClass(active: boolean) {
   }`;
 }
 
+const practiceTooltip = "Sign in to practice, legend.";
+
 export function NavbarClient() {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ export function NavbarClient() {
   const profileActive = pathname === "/profile";
 
   return (
-    <header className="animate-navbar-drop fixed inset-x-0 top-0 z-50">
+    <header className="fixed inset-x-0 top-0 z-50">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
@@ -94,13 +96,19 @@ export function NavbarClient() {
               Practice
             </Link>
           ) : (
-            <span
-              aria-disabled="true"
-              className="cursor-not-allowed text-zinc-500 line-through decoration-zinc-500/80"
-              title="Sign in to access Practice"
-            >
-              Practice
-            </span>
+            <div className="group relative">
+              <Link
+                className="text-zinc-300 transition hover:text-accent"
+                href="/auth/sign-in?redirect=%2Fpractice"
+                prefetch
+                title={practiceTooltip}
+              >
+                Practice
+              </Link>
+              <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-56 -translate-x-1/2 rounded-xl border border-ink-700 bg-ink-950/95 px-3 py-2 text-center text-xs text-zinc-300 opacity-0 shadow-glow transition duration-200 group-hover:opacity-100">
+                {practiceTooltip}
+              </div>
+            </div>
           )}
           {loading ? (
             <span className="h-9 w-24 animate-pulse rounded-full border border-ink-700 bg-ink-900/70" />
@@ -140,13 +148,15 @@ export function NavbarClient() {
                 Practice
               </Link>
             ) : (
-              <span
-                aria-disabled="true"
-                className="rounded-lg px-3 py-2 text-zinc-500 line-through decoration-zinc-500/80"
-                title="Sign in to access Practice"
+              <Link
+                className="rounded-lg px-3 py-2 text-zinc-200 transition hover:bg-ink-900/70"
+                href="/auth/sign-in?redirect=%2Fpractice"
+                prefetch
+                onClick={() => setMenuOpen(false)}
+                title={practiceTooltip}
               >
                 Practice
-              </span>
+              </Link>
             )}
 
             {loading ? (
