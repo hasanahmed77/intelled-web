@@ -29,13 +29,9 @@ function CrackOverlay() {
       fill="none"
       aria-hidden="true"
     >
-      {/* main crack — top centre down to bottom right */}
       <path d="M17 1 L19 9 L23 7 L20 17 L29 13 L25 23 L35 22" stroke="white" strokeWidth="0.6" strokeOpacity="0.35" strokeLinecap="round" strokeLinejoin="round" />
-      {/* branch off main crack */}
       <path d="M25 23 L28 30 L32 33" stroke="white" strokeWidth="0.5" strokeOpacity="0.25" strokeLinecap="round" />
-      {/* secondary crack — left side */}
       <path d="M20 17 L13 22 L7 35" stroke="white" strokeWidth="0.5" strokeOpacity="0.28" strokeLinecap="round" strokeLinejoin="round" />
-      {/* top left splinter */}
       <path d="M19 9 L11 5 L5 9" stroke="white" strokeWidth="0.4" strokeOpacity="0.2" strokeLinecap="round" />
     </svg>
   );
@@ -52,22 +48,28 @@ export function NavbarClient() {
   const username = userEmail.split("@")[0] ?? "";
   const initial = username.charAt(0).toUpperCase();
 
+  const fetchStreak = async (userId: string) => {
+    const supabase = createSupabaseBrowserClient();
+    const { data } = await supabase
+      .from("profiles")
+      .select("current_streak")
+      .eq("id", userId)
+      .maybeSingle();
+    setCurrentStreak(data?.current_streak ?? 0);
+  };
+
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
     const load = async () => {
-      const { data } = await supabase.auth.getUser();
-      setIsAuthed(Boolean(data.user));
-      setUserEmail(data.user?.email ?? "");
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("current_streak")
-          .eq("id", data.user.id)
-          .maybeSingle();
-        setCurrentStreak(profile?.current_streak ?? 0);
-      }
+      // getSession reads from localStorage — no network call, near-instant
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user ?? null;
+      setIsAuthed(Boolean(user));
+      setUserEmail(user?.email ?? "");
       setLoading(false);
+      // Fetch streak in the background after unblocking the UI
+      if (user) fetchStreak(user.id);
     };
 
     load();
@@ -75,11 +77,26 @@ export function NavbarClient() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthed(Boolean(session?.user));
       setUserEmail(session?.user?.email ?? "");
+      if (session?.user) {
+        fetchStreak(session.user.id);
+      } else {
+        setCurrentStreak(0);
+      }
     });
+
+    // Re-fetch streak after worksheet submission
+    const handleStreakChanged = () => {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session?.user) fetchStreak(data.session.user.id);
+      });
+    };
+    window.addEventListener("streak-changed", handleStreakChanged);
 
     return () => {
       listener.subscription.unsubscribe();
+      window.removeEventListener("streak-changed", handleStreakChanged);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pricingActive = pathname === "/pricing";
@@ -203,7 +220,6 @@ export function NavbarClient() {
                 Practice
               </Link>
             )}
-
             {loading ? (
               <span className="h-10 w-full animate-pulse rounded-full border border-ink-700 bg-ink-900/70" />
             ) : (
@@ -214,7 +230,7 @@ export function NavbarClient() {
                       href="/profile"
                       prefetch
                       className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
-                        "profile-fire-aura"
+                        currentStreak > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-400"
                       } ${profileActive ? "border-accent text-accent" : ""}`}
                       aria-label="Open profile"
                     >

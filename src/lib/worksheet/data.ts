@@ -45,16 +45,16 @@ export async function insertWorksheet(userId: string, worksheet: GeneratedWorksh
   return worksheetRow;
 }
 
-export async function fetchWorksheets(userId: string) {
+export async function fetchWorksheets(userId: string, limit = 10, offset = 0) {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("worksheets")
-    .select("id, title, topic, difficulty, language, created_at")
+    .select("id, title, topic, difficulty, language, created_at", { count: "exact" })
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(10);
+    .range(offset, offset + limit - 1);
 
-  return data ?? [];
+  return { data: data ?? [], total: count ?? 0 };
 }
 
 export async function fetchWorksheetWithQuestions(userId: string, worksheetId: string) {

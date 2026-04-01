@@ -18,7 +18,6 @@ export default async function LeaderboardPage() {
   return (
     <ViewportSection innerClassName="space-y-8 pt-6 pb-20">
       <div className="space-y-2">
-        <span className="tag">Global</span>
         <h1 className="text-3xl font-semibold">Leaderboard</h1>
         <p className="text-muted">Top 10 practitioners ranked by attempts and average score.</p>
       </div>

@@ -102,7 +102,6 @@ export default async function PricingPage({
           </div>
         ) : null}
         <div className="space-y-4 text-center">
-          <span className="tag">Pricing</span>
           <h1 className="text-4xl font-semibold">Simple plans, clear value.</h1>
           <p className="mx-auto max-w-2xl text-muted">
             Every account starts on Free with 2 problem sets for life. Paid plans unlock

@@ -44,7 +44,6 @@ export default async function PracticePage() {
     <ViewportSection center>
       <div className="w-full space-y-10">
         <div className="space-y-2">
-          <span className="tag">Practice</span>
           <h1 className="text-3xl font-semibold">
             What would you like to learn today,{" "}
             <AnimatedName name={displayName} />?

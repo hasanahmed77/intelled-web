@@ -3,7 +3,6 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateWorksheetsAction } from "@/app/actions/worksheet";
-import { ConfettiBurst, type ScoreRange } from "@/components/confetti-burst";
 import { LoadingBar } from "@/components/loading-bar";
 
 const promptExamples = [
@@ -40,17 +39,7 @@ export function PracticeForm({
   const [generationStepIndex, setGenerationStepIndex] = useState(0);
   const [isHintVisible, setIsHintVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
-  const [confettiTrigger, setConfettiTrigger] = useState(0);
-  const [testTrigger, setTestTrigger] = useState(0);
-  const [testRange, setTestRange] = useState<ScoreRange>("top");
   const router = useRouter();
-
-  const testRanges: ScoreRange[] = ["perfect", "top", "high", "mid", "low"];
-  const handleTest = () => {
-    const next = testRanges[(testRanges.indexOf(testRange) + 1) % testRanges.length];
-    setTestRange(next);
-    setTestTrigger((t) => t + 1);
-  };
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -64,10 +53,8 @@ export function PracticeForm({
     return () => window.clearInterval(interval);
   }, []);
 
-  const isGenerating = isPending;
-
   useEffect(() => {
-    if (!isGenerating) {
+    if (!isPending) {
       setGenerationStepIndex(0);
       return;
     }
@@ -77,7 +64,7 @@ export function PracticeForm({
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [isGenerating]);
+  }, [isPending]);
 
   return (
     <form
@@ -89,9 +76,7 @@ export function PracticeForm({
       }}
       onSubmit={(event) => {
         event.preventDefault();
-        if (generationDisabled) {
-          return;
-        }
+        if (generationDisabled) return;
         const formData = new FormData(event.currentTarget);
         startTransition(async () => {
           try {
@@ -112,9 +97,7 @@ export function PracticeForm({
         });
       }}
     >
-      <ConfettiBurst triggerKey={confettiTrigger} recipientName={username} />
-      <ConfettiBurst triggerKey={testTrigger} recipientName={username} scoreRange={testRange} />
-      {isGenerating ? (
+      {isPending ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 backdrop-blur-[3px]">
           <div className="loading-vignette absolute inset-0" />
           <div className="relative mx-4 flex w-full max-w-lg justify-center">
@@ -180,20 +163,13 @@ export function PracticeForm({
           <p className="text-sm text-accent">Generated. Redirecting...</p>
         ) : null}
       </div>
-      <div className="flex justify-center gap-3 pt-2">
+      <div className="flex justify-center pt-2">
         <button
           className="button button-primary"
           type="submit"
           disabled={isPending || generationDisabled}
         >
           {isPending ? "Generating..." : generationDisabled ? "Can't go! :(" : "Go!"}
-        </button>
-        <button
-          className="button button-dark-accent"
-          type="button"
-          onClick={handleTest}
-        >
-          Test ({testRange})
         </button>
       </div>
       {generationDisabledMessage ? (
