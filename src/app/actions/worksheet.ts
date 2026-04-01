@@ -10,12 +10,15 @@ import {
 import { generateWorksheet } from "@/lib/worksheet/generator";
 import type { DifficultySelection } from "@/lib/worksheet/types";
 import {
+  createStaticWorksheetFromBank,
   createAttempt,
   fetchAttemptByWorksheet,
+  fetchWorksheetAnswerKey,
+  fetchWorksheetWithQuestions,
   getPerformanceDifficulty,
   insertWorksheet
 } from "@/lib/worksheet/data";
-import { gradeAnswers } from "@/lib/worksheet/grading";
+import { gradeAnswers, gradeStaticAnswers } from "@/lib/worksheet/grading";
 
 const generateSchema = z.object({
   topic: z.string().min(4, "Add a more specific topic."),
@@ -44,7 +47,7 @@ export async function generateWorksheetsAction(formData: FormData) {
   let creditConsumed = false;
 
   try {
-    const credit = await consumeWorksheetCredit(user.id);
+    const credit = await consumeWorksheetCredit(user.id, "ai");
     if (!credit.ok) {
       return {
         ok: false,
@@ -58,7 +61,7 @@ export async function generateWorksheetsAction(formData: FormData) {
     return { ok: true, worksheetId: inserted.id };
   } catch (error) {
     if (creditConsumed) {
-      await refundWorksheetCredit(user.id);
+      await refundWorksheetCredit(user.id, "ai");
     }
 
     return {
@@ -68,15 +71,70 @@ export async function generateWorksheetsAction(formData: FormData) {
   }
 }
 
+const generateStaticSchema = z.object({
+  educationType: z.string().min(1, "Choose an education type."),
+  subject: z.string().min(1, "Choose a subject."),
+  topic: z.string().min(1, "Choose a topic."),
+  difficulty: z.enum(["easy", "medium", "hard", "auto"])
+});
+
+export async function generateStaticWorksheetAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = generateStaticSchema.safeParse({
+    educationType: formData.get("educationType"),
+    subject: formData.get("subject"),
+    topic: formData.get("topic"),
+    difficulty: formData.get("difficulty")
+  });
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.errors[0]?.message ?? "Invalid input." };
+  }
+
+  const resolvedDifficulty =
+    parsed.data.difficulty === "auto"
+      ? await getPerformanceDifficulty(user.id)
+      : (parsed.data.difficulty as Exclude<DifficultySelection, "auto">);
+
+  let creditConsumed = false;
+
+  try {
+    const credit = await consumeWorksheetCredit(user.id, "static");
+    if (!credit.ok) {
+      return {
+        ok: false,
+        error: credit.message ?? "Unable to create problem set."
+      };
+    }
+
+    creditConsumed = true;
+    const worksheet = await createStaticWorksheetFromBank({
+      userId: user.id,
+      educationType: parsed.data.educationType,
+      subject: parsed.data.subject,
+      topic: parsed.data.topic,
+      difficulty: resolvedDifficulty
+    });
+
+    return { ok: true, worksheetId: worksheet.id };
+  } catch (error) {
+    if (creditConsumed) {
+      await refundWorksheetCredit(user.id, "static");
+    }
+
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to create problem set."
+    };
+  }
+}
+
 const submitSchema = z.object({
   worksheetId: z.string().uuid(),
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  language: z.enum(["english", "bengali"]),
   questions: z
     .array(
       z.object({
         index: z.number().int().min(1),
-        prompt: z.string().min(1),
         userAnswer: z.preprocess(
           (val) => String(val ?? "").trim(),
           z
@@ -94,9 +152,7 @@ const submitSchema = z.object({
 
 export async function submitAttemptAction(payload: {
   worksheetId: string;
-  difficulty: "easy" | "medium" | "hard";
-  language: "english" | "bengali";
-  questions: { index: number; prompt: string; userAnswer: string }[];
+  questions: { index: number; userAnswer: string }[];
 }) {
   const user = await requireUser();
   const parsed = submitSchema.safeParse(payload);
@@ -128,12 +184,76 @@ export async function submitAttemptAction(payload: {
     };
   }
 
+  const worksheet = await fetchWorksheetWithQuestions(user.id, parsed.data.worksheetId);
+  if (!worksheet) {
+    return {
+      ok: false,
+      error: "Problem set not found."
+    };
+  }
+
+  const storedQuestions =
+    (worksheet.questions as { id: string; prompt: string; order: number }[] | null) ?? [];
+  const indexedQuestions = new Map(storedQuestions.map((question) => [question.order, question]));
+
+  if (parsed.data.questions.length !== storedQuestions.length) {
+    return {
+      ok: false,
+      error: "Your submission does not match this problem set."
+    };
+  }
+
+  const mergedQuestions = [];
+  for (const question of parsed.data.questions) {
+    const stored = indexedQuestions.get(question.index);
+    if (!stored) {
+      return {
+        ok: false,
+        error: "Your submission contains an invalid question."
+      };
+    }
+
+    mergedQuestions.push({
+      index: question.index,
+      prompt: stored.prompt,
+      userAnswer: question.userAnswer
+    });
+  }
+
   let graded;
   try {
-    graded = await gradeAnswers({
-      language: parsed.data.language,
-      questions: parsed.data.questions
-    });
+    if (worksheet.source === "static") {
+      const answerKey = await fetchWorksheetAnswerKey(parsed.data.worksheetId);
+
+      if (!answerKey || answerKey.length !== mergedQuestions.length) {
+        return {
+          ok: false,
+          error: "The answer key for this problem set is missing."
+        };
+      }
+
+      const indexedKey = new Map(answerKey.map((item) => [item.order, item]));
+      graded = await gradeStaticAnswers({
+        language: (worksheet.language as "english" | "bengali") ?? "english",
+        questions: mergedQuestions.map((question) => {
+          const answer = indexedKey.get(question.index);
+          if (!answer) {
+            throw new Error("The answer key for this problem set is incomplete.");
+          }
+
+          return {
+            ...question,
+            correctAnswer: answer.correctAnswer,
+            feedback: answer.feedback
+          };
+        })
+      });
+    } else {
+      graded = await gradeAnswers({
+        language: (worksheet.language as "english" | "bengali") ?? "english",
+        questions: mergedQuestions
+      });
+    }
   } catch (error) {
     return {
       ok: false,
@@ -148,7 +268,7 @@ export async function submitAttemptAction(payload: {
   const result = await createAttempt({
     userId: user.id,
     worksheetId: parsed.data.worksheetId,
-    difficulty: parsed.data.difficulty,
+    difficulty: worksheet.difficulty as "easy" | "medium" | "hard",
     score,
     answers: graded.map((item) => ({
       index: item.index,

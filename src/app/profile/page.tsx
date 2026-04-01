@@ -7,9 +7,16 @@ import { fetchUserBadges, fetchCurrentChallengeProgress } from "@/lib/gamificati
 import { getLevelInfo, getCurrentWeekChallenge, BADGE_DEFINITIONS } from "@/lib/gamification/types";
 import { ProfileDashboard } from "@/components/profile-dashboard";
 import type { BadgeItem, WorksheetItem } from "@/components/profile-dashboard";
+import type { BillingPlanId } from "@/lib/billing/types";
 
 const VALID_TABS = ["overview", "progress", "badges", "sets", "subscription"] as const;
 const PAGE_SIZE = 10;
+const PLAN_DISPLAY_NAME: Record<BillingPlanId, string> = {
+  free: "FREE",
+  static_monthly: "ESSENTIAL",
+  hybrid_monthly: "PLUS",
+  hybrid_yearly: "PRO"
+};
 
 export default async function ProfilePage({
   searchParams,
@@ -51,18 +58,21 @@ export default async function ProfilePage({
   );
 
   // Billing
-  const currentPlanId = billing.subscription?.plan_id ?? "free";
+  const currentPlanId = (billing.subscription?.plan_id ?? "free") as BillingPlanId;
   const currentPlan =
     plans.find((p) => p.id === currentPlanId) ?? plans.find((p) => p.id === "free") ?? null;
   const worksheetLimit: number | null =
     currentPlanId === "free"
       ? (currentPlan?.lifetime_worksheet_limit ?? 2)
-      : (currentPlan?.worksheets_per_period ?? null); // null = unlimited
-  const currentLimit = worksheetLimit;
-  const currentUsed =
-    currentPlanId === "free"
-      ? (billing.usage?.free_worksheets_used_lifetime ?? 0)
-      : (billing.usage?.period_worksheets_used ?? 0);
+      : ((currentPlan?.static_problem_sets_per_period ?? 0) +
+          (currentPlan?.ai_problem_sets_per_period ?? 0));
+  const freeUsed = billing.usage?.free_worksheets_used_lifetime ?? 0;
+  const staticUsed = billing.usage?.period_static_problem_sets_used ?? 0;
+  const aiUsed = billing.usage?.period_ai_problem_sets_used ?? 0;
+  const staticLimit =
+    currentPlanId === "free" ? null : (currentPlan?.static_problem_sets_per_period ?? null);
+  const aiLimit =
+    currentPlanId === "free" ? null : (currentPlan?.ai_problem_sets_per_period ?? null);
 
   // XP / Level
   const totalXp = profile?.total_xp ?? 0;
@@ -83,11 +93,14 @@ export default async function ProfilePage({
   const cappedData = worksheetLimit !== null
     ? worksheetData.slice(0, worksheetLimit)
     : worksheetData;
+  const visibleWorksheetCount =
+    worksheetLimit !== null ? Math.min(totalWorksheets, worksheetLimit) : totalWorksheets;
 
   const worksheetItems: WorksheetItem[] = cappedData.map((w) => ({
     id: w.id,
     title: w.title,
     difficulty: w.difficulty,
+    source: ((w.source as string | null) ?? "ai") as "ai" | "static",
     created_at: w.created_at,
     done: completedIds.has(w.id),
   }));
@@ -101,7 +114,7 @@ export default async function ProfilePage({
       displayName={displayName}
       goalText={goalText}
       average={average}
-      worksheetCount={worksheetData.length}
+      worksheetCount={visibleWorksheetCount}
       attemptCount={attempts.length}
       currentStreak={profile?.current_streak ?? 0}
       longestStreak={profile?.longest_streak ?? 0}
@@ -123,11 +136,16 @@ export default async function ProfilePage({
       worksheetLimit={worksheetLimit}
       completedWorksheetIds={completedWorksheetIds}
       planId={currentPlanId}
+      planName={PLAN_DISPLAY_NAME[currentPlanId]}
       planStatus={billing.subscription?.status ?? "active"}
       periodEnd={billing.subscription?.period_end ?? null}
       autoRenew={billing.subscription?.auto_renew ?? false}
-      currentUsed={currentUsed}
-      currentLimit={currentLimit}
+      freeUsed={freeUsed}
+      freeLimit={currentPlan?.lifetime_worksheet_limit ?? 2}
+      staticUsed={staticUsed}
+      staticLimit={staticLimit}
+      aiUsed={aiUsed}
+      aiLimit={aiLimit}
       cancelAtPeriodEnd={billing.subscription?.cancel_at_period_end ?? false}
       cancelAction={cancelSubscriptionAction}
     />

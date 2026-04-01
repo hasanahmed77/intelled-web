@@ -11,37 +11,41 @@ const FALLBACK_PLANS: BillingPlan[] = [
     interval: "free",
     price_bdt: 0,
     duration_days: 0,
-    worksheets_per_period: null,
+    static_problem_sets_per_period: null,
+    ai_problem_sets_per_period: null,
     lifetime_worksheet_limit: 2,
     active: true
   },
   {
-    id: "weekly",
-    name: "Weekly",
-    interval: "weekly",
-    price_bdt: 129,
-    duration_days: 7,
-    worksheets_per_period: 12,
-    lifetime_worksheet_limit: null,
-    active: true
-  },
-  {
-    id: "monthly",
-    name: "Monthly",
+    id: "static_monthly",
+    name: "Static Monthly",
     interval: "monthly",
-    price_bdt: 349,
+    price_bdt: 149,
     duration_days: 30,
-    worksheets_per_period: 50,
+    static_problem_sets_per_period: 120,
+    ai_problem_sets_per_period: 0,
     lifetime_worksheet_limit: null,
     active: true
   },
   {
-    id: "yearly",
-    name: "Yearly",
+    id: "hybrid_monthly",
+    name: "Static + AI Monthly",
+    interval: "monthly",
+    price_bdt: 449,
+    duration_days: 30,
+    static_problem_sets_per_period: 120,
+    ai_problem_sets_per_period: 40,
+    lifetime_worksheet_limit: null,
+    active: true
+  },
+  {
+    id: "hybrid_yearly",
+    name: "Static + AI Yearly",
     interval: "yearly",
-    price_bdt: 3699,
+    price_bdt: 4499,
     duration_days: 365,
-    worksheets_per_period: 600,
+    static_problem_sets_per_period: 1800,
+    ai_problem_sets_per_period: 600,
     lifetime_worksheet_limit: null,
     active: true
   }
@@ -61,9 +65,13 @@ const FALLBACK_SUBSCRIPTION: UserSubscription = {
 const FALLBACK_USAGE: UsageCounter = {
   user_id: "",
   free_worksheets_used_lifetime: 0,
-  period_worksheets_used: 0,
+  period_static_problem_sets_used: 0,
+  period_ai_problem_sets_used: 0,
   period_anchor: null
 };
+
+const PLAN_SELECT =
+  "id, name, interval, price_bdt, duration_days, static_problem_sets_per_period, ai_problem_sets_per_period, lifetime_worksheet_limit, active";
 
 function isBillingSchemaUnavailable(message: string | undefined) {
   if (!message) {
@@ -141,7 +149,8 @@ async function ensureBillingRows(userId: string) {
     const { error } = await supabase.from("usage_counters").insert({
       user_id: userId,
       free_worksheets_used_lifetime: 0,
-      period_worksheets_used: 0,
+      period_static_problem_sets_used: 0,
+      period_ai_problem_sets_used: 0,
       period_anchor: null
     });
 
@@ -180,7 +189,9 @@ async function refreshSubscriptionStateDirect(userId: string) {
         .single(),
       supabase
         .from("usage_counters")
-        .select("user_id, free_worksheets_used_lifetime, period_worksheets_used, period_anchor")
+        .select(
+          "user_id, free_worksheets_used_lifetime, period_static_problem_sets_used, period_ai_problem_sets_used, period_anchor"
+        )
         .eq("user_id", userId)
         .single()
     ]);
@@ -206,9 +217,7 @@ async function refreshSubscriptionStateDirect(userId: string) {
 
   const { data: plan, error: planError } = await supabase
     .from("billing_plans")
-    .select(
-      "id, name, interval, price_bdt, duration_days, worksheets_per_period, lifetime_worksheet_limit, active"
-    )
+    .select(PLAN_SELECT)
     .eq("id", currentSubscription.plan_id)
     .single();
 
@@ -291,7 +300,8 @@ async function refreshSubscriptionStateDirect(userId: string) {
       .from("usage_counters")
       .update({
         period_anchor: renewalStart.toISOString(),
-        period_worksheets_used: 0
+        period_static_problem_sets_used: 0,
+        period_ai_problem_sets_used: 0
       })
       .eq("user_id", userId);
 
@@ -314,7 +324,8 @@ async function refreshSubscriptionStateDirect(userId: string) {
       usage: {
         ...currentUsage,
         period_anchor: renewalStart.toISOString(),
-        period_worksheets_used: 0
+        period_static_problem_sets_used: 0,
+        period_ai_problem_sets_used: 0
       }
     };
   }
@@ -364,9 +375,7 @@ export const listActivePlans = unstable_cache(
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("billing_plans")
-      .select(
-        "id, name, interval, price_bdt, duration_days, worksheets_per_period, lifetime_worksheet_limit, active"
-      )
+      .select(PLAN_SELECT)
       .eq("active", true)
       .order("price_bdt", { ascending: true });
 
@@ -411,9 +420,7 @@ export async function activateDummySubscription(
   const current = await refreshSubscriptionStateDirect(userId);
   const { data: plan, error: planError } = await supabase
     .from("billing_plans")
-    .select(
-      "id, name, interval, price_bdt, duration_days, worksheets_per_period, lifetime_worksheet_limit, active"
-    )
+    .select(PLAN_SELECT)
     .eq("id", planId)
     .eq("active", true)
     .single();
@@ -477,7 +484,8 @@ export async function activateDummySubscription(
     .from("usage_counters")
     .update({
       period_anchor: periodStart,
-      period_worksheets_used: 0
+      period_static_problem_sets_used: 0,
+      period_ai_problem_sets_used: 0
     })
     .eq("user_id", userId);
 
@@ -532,14 +540,15 @@ export async function cancelCurrentSubscription(userId: string) {
   };
 }
 
-export async function consumeWorksheetCredit(userId: string) {
+export async function consumeWorksheetCredit(
+  userId: string,
+  source: "static" | "ai"
+) {
   const supabase = createSupabaseAdminClient();
   const current = await refreshSubscriptionStateDirect(userId);
   const { data: plan, error: planError } = await supabase
     .from("billing_plans")
-    .select(
-      "id, name, interval, price_bdt, duration_days, worksheets_per_period, lifetime_worksheet_limit, active"
-    )
+    .select(PLAN_SELECT)
     .eq("id", current.subscription.plan_id)
     .single();
 
@@ -581,13 +590,15 @@ export async function consumeWorksheetCredit(userId: string) {
   const shouldResetUsage =
     current.usage.period_anchor !== current.subscription.period_start;
 
-  let periodUsed = current.usage.period_worksheets_used;
+  let staticUsed = current.usage.period_static_problem_sets_used;
+  let aiUsed = current.usage.period_ai_problem_sets_used;
   if (shouldResetUsage) {
     const resetResult = await supabase
       .from("usage_counters")
       .update({
         period_anchor: current.subscription.period_start,
-        period_worksheets_used: 0
+        period_static_problem_sets_used: 0,
+        period_ai_problem_sets_used: 0
       })
       .eq("user_id", userId);
 
@@ -595,17 +606,27 @@ export async function consumeWorksheetCredit(userId: string) {
       throw new Error(resetResult.error.message);
     }
 
-    periodUsed = 0;
+    staticUsed = 0;
+    aiUsed = 0;
   }
 
+  const limitForSource =
+    source === "static"
+      ? plan.static_problem_sets_per_period
+      : plan.ai_problem_sets_per_period;
+  const usedForSource = source === "static" ? staticUsed : aiUsed;
+
   if (
-    plan.worksheets_per_period !== null &&
-    periodUsed >= plan.worksheets_per_period
+    limitForSource !== null &&
+    usedForSource >= limitForSource
   ) {
     return {
       ok: false,
       code: "PLAN_LIMIT_REACHED",
-      message: "Your worksheet limit is reached for the current billing period."
+      message:
+        source === "static"
+          ? "Your static problem set limit is reached for the current billing period."
+          : "Your AI problem set limit is reached for the current billing period."
     };
   }
 
@@ -613,7 +634,9 @@ export async function consumeWorksheetCredit(userId: string) {
     .from("usage_counters")
     .update({
       period_anchor: current.subscription.period_start,
-      period_worksheets_used: periodUsed + 1
+      ...(source === "static"
+        ? { period_static_problem_sets_used: staticUsed + 1 }
+        : { period_ai_problem_sets_used: aiUsed + 1 })
     })
     .eq("user_id", userId);
 
@@ -621,17 +644,18 @@ export async function consumeWorksheetCredit(userId: string) {
     throw new Error(updateResult.error.message);
   }
 
-  return {
-    ok: true,
-    plan: current.subscription.plan_id,
-    remaining:
-      plan.worksheets_per_period === null
-        ? null
-        : Math.max(plan.worksheets_per_period - (periodUsed + 1), 0)
-  };
+    return {
+      ok: true,
+      plan: current.subscription.plan_id,
+      remaining:
+        limitForSource === null ? null : Math.max(limitForSource - (usedForSource + 1), 0)
+    };
 }
 
-export async function refundWorksheetCredit(userId: string) {
+export async function refundWorksheetCredit(
+  userId: string,
+  source: "static" | "ai"
+) {
   const supabase = createSupabaseAdminClient();
   const current = await getCurrentSubscription(userId);
 
@@ -656,7 +680,19 @@ export async function refundWorksheetCredit(userId: string) {
   const { error } = await supabase
     .from("usage_counters")
     .update({
-      period_worksheets_used: Math.max(current.usage.period_worksheets_used - 1, 0)
+      ...(source === "static"
+        ? {
+            period_static_problem_sets_used: Math.max(
+              current.usage.period_static_problem_sets_used - 1,
+              0
+            )
+          }
+        : {
+            period_ai_problem_sets_used: Math.max(
+              current.usage.period_ai_problem_sets_used - 1,
+              0
+            )
+          })
     })
     .eq("user_id", userId);
 

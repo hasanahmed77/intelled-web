@@ -6,6 +6,8 @@ import { ConfettiBurst, type ScoreRange } from "@/components/confetti-burst";
 import { LoadingBar } from "@/components/loading-bar";
 import { MathText } from "@/components/math-text";
 import { MathAnswerInput } from "@/components/math-answer-input";
+import { QuestionDiagramView } from "@/components/question-diagram";
+import type { QuestionDiagram } from "@/lib/worksheet/types";
 
 const evaluationSteps = [
   "Reviewing your answers...",
@@ -27,6 +29,7 @@ type Question = {
   id: string;
   prompt: string;
   order: number;
+  diagram?: QuestionDiagram | null;
 };
 
 type Result = {
@@ -38,8 +41,6 @@ type Result = {
 
 export function WorksheetAttemptForm({
   worksheetId,
-  difficulty,
-  language,
   username,
   questions,
   submitted,
@@ -47,8 +48,6 @@ export function WorksheetAttemptForm({
   initialResult
 }: {
   worksheetId: string;
-  difficulty: "easy" | "medium" | "hard";
-  language: "english" | "bengali";
   username: string;
   questions: Question[];
   submitted: boolean;
@@ -109,11 +108,8 @@ export function WorksheetAttemptForm({
     try {
       const payload = {
         worksheetId,
-        difficulty,
-        language,
         questions: questions.map((question) => ({
           index: question.order,
-          prompt: question.prompt,
           userAnswer: (answers[question.id] ?? "").trim()
         }))
       };
@@ -162,6 +158,7 @@ export function WorksheetAttemptForm({
           <div key={question.id} className="space-y-3 border-b border-ink-800 pb-4 last:border-b-0 last:pb-0">
             <p className="text-sm text-muted">Question {index + 1}</p>
             <MathText content={question.prompt} className="text-lg" />
+            {question.diagram ? <QuestionDiagramView diagram={question.diagram} /> : null}
             <MathAnswerInput
               placeholder="Your answer"
               value={answers[question.id] ?? ""}

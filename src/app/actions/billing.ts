@@ -6,7 +6,7 @@ import { activateDummySubscription, cancelCurrentSubscription } from "@/lib/bill
 import { requireUser } from "@/lib/auth";
 
 const planSchema = z.object({
-  planId: z.enum(["weekly", "monthly", "yearly"])
+  planId: z.enum(["static_monthly", "hybrid_monthly", "hybrid_yearly"])
 });
 
 export async function subscribeToPlanAction(formData: FormData) {

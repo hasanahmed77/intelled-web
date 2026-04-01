@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatedName } from "@/components/animated-name";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { ProfileSidebar } from "@/components/profile-sidebar";
 import type { ProfileTab } from "@/components/profile-sidebar";
-import { loadMoreWorksheetsAction } from "@/app/actions/profile";
+import { fetchWorksheetPageAction } from "@/app/actions/profile";
 
 function toTitleCase(value: string) {
   return value.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
@@ -92,6 +92,7 @@ export type WorksheetItem = {
   id: string;
   title: string;
   difficulty: string;
+  source: "ai" | "static";
   created_at: string;
   done: boolean;
 };
@@ -108,25 +109,57 @@ function ProblemSetsTab({
   completedIds: Set<string>;
 }) {
   const [worksheets, setWorksheets] = useState(initialWorksheets);
+  const [page, setPage] = useState(1);
   const [isPending, startTransition] = useTransition();
 
   // Effective ceiling: plan limit (if set) capped by what actually exists in DB
   const effectiveMax =
     worksheetLimit !== null ? Math.min(worksheetLimit, totalWorksheets) : totalWorksheets;
-  const hasMore = worksheets.length < effectiveMax;
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(effectiveMax / pageSize));
+  const currentPageItems = worksheets.slice((page - 1) * pageSize, page * pageSize);
+  const loadedPages = Math.max(1, Math.ceil(worksheets.length / pageSize));
+  const canGoPrev = page > 1;
+  const canGoNext = page < totalPages;
 
-  const loadMore = () => {
+  const pageNumbers = useMemo(() => {
+    const pages = new Set<number>([1, totalPages, page - 1, page, page + 1]);
+    return [...pages].filter((value) => value >= 1 && value <= totalPages).sort((a, b) => a - b);
+  }, [page, totalPages]);
+
+  const goToPage = useCallback((nextPage: number) => {
+    if (isPending || nextPage < 1 || nextPage > totalPages) {
+      return;
+    }
+
+    if (nextPage <= loadedPages) {
+      setPage(nextPage);
+      return;
+    }
+
+    const offset = (nextPage - 1) * pageSize;
+    const remaining = effectiveMax - offset;
+
+    if (remaining <= 0) {
+      return;
+    }
+
     startTransition(async () => {
-      const next = await loadMoreWorksheetsAction(worksheets.length);
-      const capped = worksheetLimit !== null
-        ? next.slice(0, effectiveMax - worksheets.length)
-        : next;
-      setWorksheets((prev) => [
-        ...prev,
-        ...capped.map((w) => ({ ...w, done: completedIds.has(w.id) })),
-      ]);
+      const next = await fetchWorksheetPageAction(offset, remaining);
+      setWorksheets((prev) => {
+        const nextItems = next.map((w) => ({ ...w, done: completedIds.has(w.id) }));
+        const existingIds = new Set(prev.map((item) => item.id));
+        const merged = [...prev];
+        for (const item of nextItems) {
+          if (!existingIds.has(item.id)) {
+            merged.push(item);
+          }
+        }
+        return merged;
+      });
+      setPage(nextPage);
     });
-  };
+  }, [completedIds, effectiveMax, isPending, loadedPages, pageSize, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -142,11 +175,11 @@ function ProblemSetsTab({
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
-            {worksheets.map((ws) => (
+            {currentPageItems.map((ws) => (
               <Link
                 key={ws.id}
                 className="card group p-5 transition hover:border-accent"
-                href={`/practice/${ws.id}`}
+                href={ws.source === "static" ? `/practice/${ws.id}` : `/ai-practice/${ws.id}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-semibold leading-snug transition group-hover:text-accent">
@@ -169,24 +202,54 @@ function ProblemSetsTab({
               </Link>
             ))}
           </div>
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center gap-3 pt-2">
+              {isPending ? (
+                <span className="flex items-center gap-2 text-xs text-muted">
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-600 border-t-accent" />
+                  Loading page
+                </span>
+              ) : null}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={!canGoPrev || isPending}
+                  className="rounded-full border border-ink-700 px-3 py-1 text-xs text-muted transition hover:border-zinc-500 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                {pageNumbers.map((pageNumber, index) => {
+                  const previous = pageNumbers[index - 1];
+                  const showGap = previous && pageNumber - previous > 1;
 
-          {hasMore && (
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={loadMore}
-                disabled={isPending}
-                className="button"
-              >
-                {isPending ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Loading…
-                  </span>
-                ) : (
-                  `Load more (${effectiveMax - worksheets.length} remaining)`
-                )}
-              </button>
+                  return (
+                    <span key={pageNumber} className="flex items-center gap-2">
+                      {showGap ? <span className="text-xs text-muted">…</span> : null}
+                      <button
+                        type="button"
+                        onClick={() => goToPage(pageNumber)}
+                        disabled={isPending}
+                        className={`h-9 min-w-9 rounded-full border px-3 text-xs transition ${
+                          pageNumber === page
+                            ? "border-accent bg-accent/10 text-accent"
+                            : "border-ink-700 text-muted hover:border-zinc-500 hover:text-zinc-200"
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        {pageNumber}
+                      </button>
+                    </span>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={!canGoNext || isPending}
+                  className="rounded-full border border-ink-700 px-3 py-1 text-xs text-muted transition hover:border-zinc-500 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </>
@@ -227,11 +290,16 @@ export type ProfileDashboardProps = {
   completedWorksheetIds: string[];
   // Subscription
   planId: string;
+  planName: string;
   planStatus: string;
   periodEnd: string | null;
   autoRenew: boolean;
-  currentUsed: number;
-  currentLimit: number | null;
+  freeUsed: number;
+  freeLimit: number;
+  staticUsed: number;
+  staticLimit: number | null;
+  aiUsed: number;
+  aiLimit: number | null;
   cancelAtPeriodEnd: boolean;
   cancelAction: () => Promise<void>;
 };
@@ -427,7 +495,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs text-muted">Current plan</p>
-              <p className="mt-1 text-2xl font-semibold uppercase">{props.planId}</p>
+              <p className="mt-1 text-2xl font-semibold uppercase">{props.planName}</p>
             </div>
             <span className="rounded-full border border-ink-700 px-3 py-1 text-xs uppercase tracking-widest text-zinc-300">
               {props.planStatus.toUpperCase()}
@@ -442,18 +510,39 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
             </div>
             <div>
               <p className="text-xs text-muted">Auto renew</p>
-              <p className="mt-2 text-base font-medium">{props.autoRenew ? "Enabled" : "Disabled"}</p>
+              <p className="mt-2 text-base font-medium">{props.autoRenew ? "ENABLED" : "DISABLED"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">
-                {props.planId === "free" ? "Free lifetime used" : "Sets used this period"}
+                {props.planId === "free" ? "Free lifetime used" : "Static sets used"}
               </p>
               <p className="mt-2 text-base font-medium">
-                {props.currentUsed}
-                {props.currentLimit !== null ? ` / ${props.currentLimit}` : ""}
+                {props.planId === "free" ? props.freeUsed : props.staticUsed}
+                {props.planId === "free"
+                  ? ` / ${props.freeLimit}`
+                  : props.staticLimit !== null
+                  ? ` / ${props.staticLimit}`
+                  : ""}
               </p>
             </div>
           </div>
+          {props.planId !== "free" ? (
+            <div className="grid gap-6 border-t border-ink-800 pt-5 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted">AI sets used</p>
+                <p className="mt-2 text-base font-medium">
+                  {props.aiUsed}
+                  {props.aiLimit !== null ? ` / ${props.aiLimit}` : ""}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted">Plan mix</p>
+                <p className="mt-2 text-base font-medium">
+                  {props.staticLimit ?? 0} static / {props.aiLimit ?? 0} AI
+                </p>
+              </div>
+            </div>
+          ) : null}
           {props.planId !== "free" && (
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-ink-800 pt-5">
               <p className="text-sm text-muted">
@@ -480,7 +569,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
             <div>
               <p className="font-semibold">Upgrade your plan</p>
               <p className="mt-1 text-sm text-muted">
-                Unlock unlimited problem sets and priority access.
+                Unlock larger static quotas and separate AI practice access.
               </p>
             </div>
             <Link href="/pricing" className="button button-primary">

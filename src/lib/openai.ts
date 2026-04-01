@@ -1,5 +1,9 @@
 import { z } from "zod";
-import type { Difficulty, GeneratedWorksheet, WorksheetLanguage } from "@/lib/worksheet/types";
+import type {
+  Difficulty,
+  GeneratedWorksheet,
+  WorksheetLanguage
+} from "@/lib/worksheet/types";
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
@@ -360,6 +364,7 @@ Rules:
     topic,
     difficulty,
     language,
+    source: "ai",
     questions: parsed.questions.map((q, index) => ({
       id: crypto.randomUUID(),
       prompt: normalizeWorksheetPrompt(q.prompt),
@@ -415,6 +420,79 @@ Rules:
 - Preserve each original index
 - If correct: isCorrect=true, feedback="", correctAnswer=""
 - If incorrect: isCorrect=false, feedback may be brief, correctAnswer must contain a concise correct answer
+- For any mathematical notation in feedback or correctAnswer, use LaTeX delimiters: inline \\( ... \\), block \\[ ... \\]
+- Language: ${params.language}
+- ${languageInstruction}
+- Return JSON only
+
+Data:
+${JSON.stringify(params.questions)}`
+  });
+
+  const parsed = gradingSchema.parse(raw);
+  const validIndexes = new Set(params.questions.map((q) => q.index));
+
+  if (parsed.results.length !== params.questions.length) {
+    throw new Error("AI grading returned incomplete results.");
+  }
+
+  const invalid = parsed.results.filter((item) => !validIndexes.has(item.index));
+  if (invalid.length > 0) {
+    throw new Error("AI grading returned invalid indexes.");
+  }
+
+  return parsed.results;
+}
+
+export async function gradeStaticWorksheetWithOpenAI(params: {
+  language: WorksheetLanguage;
+  questions: {
+    index: number;
+    prompt: string;
+    userAnswer: string;
+    correctAnswer: string;
+    feedback: string;
+  }[];
+}) {
+  const languageInstruction =
+    params.language === "bengali"
+      ? "Return feedback and correct answers in Bangla. Keep formulas, symbols, and standard notation as-is."
+      : "Return feedback and correct answers in English. Keep formulas, symbols, and standard notation as-is.";
+
+  const raw = await callOpenAIJson({
+    schemaName: "static_worksheet_grading",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["results"],
+      properties: {
+        results: {
+          type: "array",
+          minItems: params.questions.length,
+          maxItems: params.questions.length,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["index", "isCorrect", "feedback", "correctAnswer"],
+            properties: {
+              index: { type: "integer", minimum: 1 },
+              isCorrect: { type: "boolean" },
+              feedback: { type: "string" },
+              correctAnswer: { type: "string" }
+            }
+          }
+        }
+      }
+    },
+    system:
+      "You are a strict but fair grader. Compare the student's answer against the canonical answer. Treat mathematically or logically equivalent answers as correct.",
+    user: `Grade each answer and return valid JSON.
+Rules:
+- Preserve each original index
+- Use the supplied canonical correctAnswer as the source of truth
+- Mark equivalent wording, equivalent notation, and mathematically equivalent forms as correct
+- If correct: isCorrect=true, feedback="", correctAnswer=""
+- If incorrect: isCorrect=false, feedback should be concise and can incorporate the provided guidance, correctAnswer must contain the canonical correct answer
 - For any mathematical notation in feedback or correctAnswer, use LaTeX delimiters: inline \\( ... \\), block \\[ ... \\]
 - Language: ${params.language}
 - ${languageInstruction}

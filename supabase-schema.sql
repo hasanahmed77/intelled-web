@@ -14,10 +14,47 @@ create table if not exists worksheets (
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   topic text not null,
+  education_type text,
+  subject text,
   difficulty text not null check (difficulty in ('easy', 'medium', 'hard')),
   language text not null default 'english' check (language in ('english', 'bengali')),
+  source text not null default 'ai' check (source in ('ai', 'static')),
   questions jsonb not null,
   created_at timestamptz not null default now()
+);
+
+create table if not exists static_question_sets (
+  id uuid primary key default gen_random_uuid(),
+  education_type text not null,
+  subject text not null,
+  topic text not null,
+  difficulty text not null default 'medium' check (difficulty in ('easy', 'medium', 'hard')),
+  language text not null default 'english' check (language in ('english', 'bengali')),
+  variant_index integer not null default 1 check (variant_index >= 1),
+  questions jsonb not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (education_type, subject, topic, language, difficulty, variant_index)
+);
+
+create table if not exists worksheet_answer_keys (
+  worksheet_id uuid primary key references worksheets(id) on delete cascade,
+  source_set_id uuid references static_question_sets(id) on delete set null,
+  questions jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists user_static_topic_progress (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  education_type text not null,
+  subject text not null,
+  topic text not null,
+  language text not null check (language in ('english', 'bengali')),
+  difficulty text not null check (difficulty in ('easy', 'medium', 'hard')),
+  next_variant_index integer not null default 1 check (next_variant_index >= 1),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, education_type, subject, topic, language, difficulty)
 );
 
 -- Attempts
@@ -36,11 +73,16 @@ create unique index if not exists worksheet_attempts_worksheet_id_unique_idx
 -- Basic indexes
 create index if not exists worksheets_user_id_idx on worksheets(user_id);
 create index if not exists worksheet_attempts_user_id_idx on worksheet_attempts(user_id);
+create index if not exists static_question_sets_lookup_idx
+  on static_question_sets(education_type, subject, topic, difficulty, language, active, variant_index);
 
 -- Row Level Security
 alter table profiles enable row level security;
 alter table worksheets enable row level security;
 alter table worksheet_attempts enable row level security;
+alter table static_question_sets enable row level security;
+alter table worksheet_answer_keys enable row level security;
+alter table user_static_topic_progress enable row level security;
 
 -- Profiles policies
 create policy "Profiles are viewable by owners" on profiles
@@ -68,6 +110,15 @@ create policy "Attempts are viewable by owners" on worksheet_attempts
 
 create policy "Attempts are insertable by owners" on worksheet_attempts
   for insert with check (auth.uid() = user_id);
+
+create policy "Static topic progress is viewable by owners" on user_static_topic_progress
+  for select using (auth.uid() = user_id);
+
+create policy "Static topic progress is insertable by owners" on user_static_topic_progress
+  for insert with check (auth.uid() = user_id);
+
+create policy "Static topic progress is updatable by owners" on user_static_topic_progress
+  for update using (auth.uid() = user_id);
 
 -- Keep only the latest 10 worksheets per user
 create or replace function public.keep_only_last_10_worksheets()

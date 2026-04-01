@@ -1,6 +1,6 @@
 import { ProblemSetDetailPage } from "@/components/problem-set-detail-page";
 
-export default async function StaticProblemSetDetailPage({
+export default async function AiProblemSetDetailPage({
   params
 }: {
   params: Promise<{ id: string }>;
@@ -10,8 +10,8 @@ export default async function StaticProblemSetDetailPage({
   return (
     <ProblemSetDetailPage
       worksheetId={id}
-      expectedSource="static"
-      redirectBasePath={`/practice/${id}`}
+      expectedSource="ai"
+      redirectBasePath={`/ai-practice/${id}`}
     />
   );
 }

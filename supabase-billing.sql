@@ -5,10 +5,12 @@ create extension if not exists "pgcrypto";
 create table if not exists public.billing_plans (
   id text primary key,
   name text not null,
-  interval text not null check (interval in ('free', 'weekly', 'monthly', 'yearly')),
+  interval text not null check (interval in ('free', 'monthly', 'yearly')),
   price_bdt integer not null check (price_bdt >= 0),
   duration_days integer not null check (duration_days >= 0),
   worksheets_per_period integer check (worksheets_per_period is null or worksheets_per_period >= 0),
+  static_problem_sets_per_period integer check (static_problem_sets_per_period is null or static_problem_sets_per_period >= 0),
+  ai_problem_sets_per_period integer check (ai_problem_sets_per_period is null or ai_problem_sets_per_period >= 0),
   lifetime_worksheet_limit integer check (lifetime_worksheet_limit is null or lifetime_worksheet_limit >= 0),
   active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -37,6 +39,8 @@ create table if not exists public.usage_counters (
   user_id uuid primary key references auth.users(id) on delete cascade,
   free_worksheets_used_lifetime integer not null default 0 check (free_worksheets_used_lifetime >= 0),
   period_worksheets_used integer not null default 0 check (period_worksheets_used >= 0),
+  period_static_problem_sets_used integer not null default 0 check (period_static_problem_sets_used >= 0),
+  period_ai_problem_sets_used integer not null default 0 check (period_ai_problem_sets_used >= 0),
   period_anchor timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -79,14 +83,16 @@ insert into public.billing_plans (
   price_bdt,
   duration_days,
   worksheets_per_period,
+  static_problem_sets_per_period,
+  ai_problem_sets_per_period,
   lifetime_worksheet_limit,
   active
 )
 values
-  ('free', 'Free', 'free', 0, 0, null, 3, true),
-  ('weekly', 'Weekly', 'weekly', 129, 7, 12, null, true),
-  ('monthly', 'Monthly', 'monthly', 349, 30, 50, null, true),
-  ('yearly', 'Yearly', 'yearly', 3699, 365, 600, null, true)
+  ('free', 'Free', 'free', 0, 0, null, null, null, 2, true),
+  ('static_monthly', 'Static Monthly', 'monthly', 149, 30, null, 120, 0, null, true),
+  ('hybrid_monthly', 'Static + AI Monthly', 'monthly', 449, 30, null, 120, 40, null, true),
+  ('hybrid_yearly', 'Static + AI Yearly', 'yearly', 4499, 365, null, 1800, 600, null, true)
 on conflict (id) do update
 set
   name = excluded.name,
@@ -94,6 +100,8 @@ set
   price_bdt = excluded.price_bdt,
   duration_days = excluded.duration_days,
   worksheets_per_period = excluded.worksheets_per_period,
+  static_problem_sets_per_period = excluded.static_problem_sets_per_period,
+  ai_problem_sets_per_period = excluded.ai_problem_sets_per_period,
   lifetime_worksheet_limit = excluded.lifetime_worksheet_limit,
   active = excluded.active,
   updated_at = now();
@@ -194,9 +202,11 @@ begin
     user_id,
     free_worksheets_used_lifetime,
     period_worksheets_used,
+    period_static_problem_sets_used,
+    period_ai_problem_sets_used,
     period_anchor
   )
-  values (p_user_id, 0, 0, null)
+  values (p_user_id, 0, 0, 0, 0, null)
   on conflict (user_id) do nothing;
 end;
 $$;
@@ -661,9 +671,11 @@ insert into public.usage_counters (
   user_id,
   free_worksheets_used_lifetime,
   period_worksheets_used,
+  period_static_problem_sets_used,
+  period_ai_problem_sets_used,
   period_anchor
 )
-select u.id, 0, 0, null
+select u.id, 0, 0, 0, 0, null
 from auth.users u
 where not exists (
   select 1

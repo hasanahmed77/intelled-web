@@ -1,0 +1,78 @@
+begin;
+
+alter table public.billing_plans
+  add column if not exists static_problem_sets_per_period integer
+    check (static_problem_sets_per_period is null or static_problem_sets_per_period >= 0),
+  add column if not exists ai_problem_sets_per_period integer
+    check (ai_problem_sets_per_period is null or ai_problem_sets_per_period >= 0);
+
+alter table public.usage_counters
+  add column if not exists period_static_problem_sets_used integer not null default 0
+    check (period_static_problem_sets_used >= 0),
+  add column if not exists period_ai_problem_sets_used integer not null default 0
+    check (period_ai_problem_sets_used >= 0);
+
+update public.billing_plans
+set lifetime_worksheet_limit = 2
+where id = 'free';
+
+insert into public.billing_plans (
+  id,
+  name,
+  interval,
+  price_bdt,
+  duration_days,
+  worksheets_per_period,
+  static_problem_sets_per_period,
+  ai_problem_sets_per_period,
+  lifetime_worksheet_limit,
+  active
+)
+values
+  ('static_monthly', 'Static Monthly', 'monthly', 149, 30, null, 120, 0, null, true),
+  ('hybrid_monthly', 'Static + AI Monthly', 'monthly', 449, 30, null, 120, 40, null, true),
+  ('hybrid_yearly', 'Static + AI Yearly', 'yearly', 4499, 365, null, 1800, 600, null, true)
+on conflict (id) do update
+set
+  name = excluded.name,
+  interval = excluded.interval,
+  price_bdt = excluded.price_bdt,
+  duration_days = excluded.duration_days,
+  worksheets_per_period = excluded.worksheets_per_period,
+  static_problem_sets_per_period = excluded.static_problem_sets_per_period,
+  ai_problem_sets_per_period = excluded.ai_problem_sets_per_period,
+  lifetime_worksheet_limit = excluded.lifetime_worksheet_limit,
+  active = excluded.active,
+  updated_at = now();
+
+update public.billing_plans
+set active = false
+where id in ('weekly', 'monthly', 'yearly');
+
+update public.user_subscriptions
+set
+  plan_id = case
+    when plan_id in ('weekly', 'monthly') then 'hybrid_monthly'
+    when plan_id = 'yearly' then 'hybrid_yearly'
+    else plan_id
+  end,
+  updated_at = now()
+where plan_id in ('weekly', 'monthly', 'yearly');
+
+update public.payment_transactions
+set plan_id = case
+  when plan_id in ('weekly', 'monthly') then 'hybrid_monthly'
+  when plan_id = 'yearly' then 'hybrid_yearly'
+  else plan_id
+end
+where plan_id in ('weekly', 'monthly', 'yearly');
+
+update public.subscription_events
+set plan_id = case
+  when plan_id in ('weekly', 'monthly') then 'hybrid_monthly'
+  when plan_id = 'yearly' then 'hybrid_yearly'
+  else plan_id
+end
+where plan_id in ('weekly', 'monthly', 'yearly');
+
+commit;

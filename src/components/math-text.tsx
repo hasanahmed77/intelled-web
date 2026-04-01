@@ -21,7 +21,38 @@ export function MathText({
   className?: string;
 }) {
   const elementRef = useRef<HTMLDivElement | null>(null);
-  const normalizedContent = content
+
+  const autoWrapPlainMath = (value: string) => {
+    const protectedBlocks: string[] = [];
+    const withPlaceholders = value.replace(/\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]/g, (match) => {
+      const token = `@@MATH_BLOCK_${protectedBlocks.length}@@`;
+      protectedBlocks.push(match);
+      return token;
+    });
+
+    const autoWrapped = withPlaceholders.replace(
+      /(^|[\s:(])([0-9√(][^,.;:!?\\n]*?(?:√|\^|×|÷|=)[^,.;:!?\\n]*?)(?=([)\s,.;:!?\\n]|$))/g,
+      (_match, prefix: string, expression: string) => {
+        const latexExpression = expression
+          .trim()
+          .replace(/−/g, "-")
+          .replace(/×/g, "\\times ")
+          .replace(/÷/g, "\\div ")
+          .replace(/√([A-Za-z0-9.]+)/g, "\\sqrt{$1}")
+          .replace(/([A-Za-z0-9.)]+)\^(-?[A-Za-z0-9.]+)/g, "$1^{$2}")
+          .replace(/\s{2,}/g, " ")
+          .trim();
+
+        return `${prefix}\\(${latexExpression}\\)`;
+      }
+    );
+
+    return autoWrapped.replace(/@@MATH_BLOCK_(\d+)@@/g, (_match, index: string) => {
+      return protectedBlocks[Number(index)] ?? "";
+    });
+  };
+
+  const normalizedContent = autoWrapPlainMath(content)
     .replace(/\r\n/g, "\n")
     .replace(/^\s*[.。．]\s*$/gm, "")
     .replace(/(\\\)|\\\]|[A-Za-z0-9}])\s*\n+\s*([.,;:!?])/g, "$1$2")

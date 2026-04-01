@@ -5,7 +5,6 @@ export default function PricingLoading() {
     <ViewportSection center>
       <div className="w-full space-y-12">
         <div className="space-y-4 text-center">
-          <div className="mx-auto h-7 w-24 animate-pulse rounded-full border border-ink-700 bg-ink-900/70" />
           <div className="mx-auto h-12 w-full max-w-xl animate-pulse rounded-2xl bg-ink-900/70" />
           <div className="mx-auto h-6 w-full max-w-2xl animate-pulse rounded-xl bg-ink-900/50" />
         </div>

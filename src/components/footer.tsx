@@ -20,6 +20,7 @@ export function Footer() {
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">Product</p>
           <Link className="block hover:text-accent" href="/practice">Practice</Link>
+          <Link className="block hover:text-accent" href="/ai-practice">AI Practice</Link>
           <Link className="block hover:text-accent" href="/pricing">Pricing</Link>
           <Link className="block hover:text-accent" href="/profile">Profile</Link>
         </div>

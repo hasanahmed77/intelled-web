@@ -83,7 +83,7 @@ export function PracticeForm({
             const result = await generateWorksheetsAction(formData);
             setState(result);
             if (result.ok && result.worksheetId) {
-              router.push(`/practice/${result.worksheetId}`);
+              router.push(`/ai-practice/${result.worksheetId}`);
             }
           } catch (error) {
             setState({

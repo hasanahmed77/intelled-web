@@ -1,12 +1,17 @@
-export type BillingPlanId = "free" | "weekly" | "monthly" | "yearly";
+export type BillingPlanId =
+  | "free"
+  | "static_monthly"
+  | "hybrid_monthly"
+  | "hybrid_yearly";
 
 export type BillingPlan = {
   id: BillingPlanId;
   name: string;
-  interval: "free" | "weekly" | "monthly" | "yearly";
+  interval: "free" | "monthly" | "yearly";
   price_bdt: number;
   duration_days: number;
-  worksheets_per_period: number | null;
+  static_problem_sets_per_period: number | null;
+  ai_problem_sets_per_period: number | null;
   lifetime_worksheet_limit: number | null;
   active: boolean;
 };
@@ -25,6 +30,7 @@ export type UserSubscription = {
 export type UsageCounter = {
   user_id: string;
   free_worksheets_used_lifetime: number;
-  period_worksheets_used: number;
+  period_static_problem_sets_used: number;
+  period_ai_problem_sets_used: number;
   period_anchor: string | null;
 };

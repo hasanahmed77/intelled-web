@@ -20,6 +20,7 @@ function mobileNavClass(active: boolean) {
 }
 
 const practiceTooltip = "Sign in to practice, legend.";
+const aiPracticeTooltip = "Sign in to use AI Practice, legend.";
 
 function CrackOverlay() {
   return (
@@ -100,7 +101,8 @@ export function NavbarClient() {
   }, []);
 
   const pricingActive = pathname === "/pricing";
-  const practiceActive = pathname.startsWith("/practice");
+  const practiceActive = pathname === "/practice" || pathname.startsWith("/practice/");
+  const aiPracticeActive = pathname === "/ai-practice" || pathname.startsWith("/ai-practice/");
   const profileActive = pathname === "/profile";
   const leaderboardActive = pathname === "/leaderboard";
 
@@ -157,6 +159,29 @@ export function NavbarClient() {
               </Link>
               <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-56 -translate-x-1/2 rounded-xl border border-ink-700 bg-ink-950/95 px-3 py-2 text-center text-xs text-zinc-300 opacity-0 shadow-glow transition duration-200 group-hover:opacity-100">
                 {practiceTooltip}
+              </div>
+            </div>
+          )}
+          {loading ? (
+            <span className="cursor-not-allowed text-zinc-500 line-through decoration-zinc-500/80">
+              AI Practice
+            </span>
+          ) : isAuthed ? (
+            <Link className={desktopNavClass(aiPracticeActive)} href="/ai-practice" prefetch>
+              AI Practice
+            </Link>
+          ) : (
+            <div className="group relative">
+              <Link
+                className="text-zinc-300 transition hover:text-accent"
+                href="/auth/sign-in?redirect=%2Fai-practice"
+                prefetch
+                title={aiPracticeTooltip}
+              >
+                AI Practice
+              </Link>
+              <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-56 -translate-x-1/2 rounded-xl border border-ink-700 bg-ink-950/95 px-3 py-2 text-center text-xs text-zinc-300 opacity-0 shadow-glow transition duration-200 group-hover:opacity-100">
+                {aiPracticeTooltip}
               </div>
             </div>
           )}
@@ -218,6 +243,25 @@ export function NavbarClient() {
                 title={practiceTooltip}
               >
                 Practice
+              </Link>
+            )}
+            {loading ? (
+              <span className="rounded-lg px-3 py-2 text-zinc-500 line-through decoration-zinc-500/80">
+                AI Practice
+              </span>
+            ) : isAuthed ? (
+              <Link className={mobileNavClass(aiPracticeActive)} href="/ai-practice" prefetch onClick={() => setMenuOpen(false)}>
+                AI Practice
+              </Link>
+            ) : (
+              <Link
+                className="rounded-lg px-3 py-2 text-zinc-200 transition hover:bg-ink-900/70"
+                href="/auth/sign-in?redirect=%2Fai-practice"
+                prefetch
+                onClick={() => setMenuOpen(false)}
+                title={aiPracticeTooltip}
+              >
+                AI Practice
               </Link>
             )}
             {loading ? (

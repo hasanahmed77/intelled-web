@@ -1,6 +1,6 @@
 import { ViewportSection } from "@/components/viewport-section";
 
-export default function PracticeLoading() {
+export default function AiPracticeLoading() {
   return (
     <ViewportSection center>
       <div className="w-full space-y-6">
@@ -10,8 +10,6 @@ export default function PracticeLoading() {
           <div className="h-4 w-24 animate-pulse rounded bg-ink-800" />
           <div className="h-12 w-full animate-pulse rounded bg-ink-800" />
           <div className="h-4 w-20 animate-pulse rounded bg-ink-800" />
-          <div className="h-12 w-full animate-pulse rounded bg-ink-800" />
-          <div className="h-4 w-16 animate-pulse rounded bg-ink-800" />
           <div className="h-12 w-full animate-pulse rounded bg-ink-800" />
           <div className="h-10 w-40 animate-pulse rounded-full bg-ink-800" />
         </div>

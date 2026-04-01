@@ -1,22 +1,19 @@
 import { requireUser } from "@/lib/auth";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
-import { listStaticQuestionBankOptions } from "@/lib/worksheet/data";
-import { fetchProfile } from "@/lib/profile/data";
 import { AnimatedName } from "@/components/animated-name";
-import { StaticPracticeForm } from "@/components/static-practice-form";
+import { PracticeForm } from "@/components/practice-form";
+import { fetchProfile } from "@/lib/profile/data";
 import { ViewportSection } from "@/components/viewport-section";
 
-export default async function PracticePage() {
-  const user = await requireUser("/practice");
+export default async function AiPracticePage() {
+  const user = await requireUser("/ai-practice");
   const fallbackName = (user.email ?? "user").split("@")[0];
-  const [profile, billing, plans, options] = await Promise.all([
+  const [profile, billing, plans] = await Promise.all([
     fetchProfile(user.id),
     getCurrentSubscription(user.id),
-    listActivePlans(),
-    listStaticQuestionBankOptions()
+    listActivePlans()
   ]);
   const displayName = profile?.full_name?.trim() || fallbackName;
-
   const currentPlan =
     plans.find((plan) => plan.id === billing.subscription.plan_id) ??
     plans.find((plan) => plan.id === "free") ??
@@ -35,12 +32,12 @@ export default async function PracticePage() {
     generationDisabledMessage = "Free plan lifetime limit reached. Upgrade to become a legend.";
   } else if (
     billing.subscription.plan_id !== "free" &&
-    currentPlan?.static_problem_sets_per_period !== null &&
-    currentPlan?.static_problem_sets_per_period !== undefined &&
-    billing.usage.period_static_problem_sets_used >= currentPlan.static_problem_sets_per_period
+    currentPlan?.ai_problem_sets_per_period !== null &&
+    currentPlan?.ai_problem_sets_per_period !== undefined &&
+    billing.usage.period_ai_problem_sets_used >= currentPlan.ai_problem_sets_per_period
   ) {
     generationDisabled = true;
-    generationDisabledMessage = "Your static problem set limit is reached for the current billing period.";
+    generationDisabledMessage = "Your AI problem set limit is reached for the current billing period.";
   }
 
   return (
@@ -51,13 +48,13 @@ export default async function PracticePage() {
             What would you like to learn today, <AnimatedName name={displayName} />?
           </h1>
           <p className="text-muted">
-            Choose an education type, subject, topic, and difficulty. Access curated problem
-            sets with precise evaluation and targeted feedback.
+            Enter a topic and choose a difficulty. Auto uses your performance history to
+            tune the problem set level.
           </p>
         </div>
 
-        <StaticPracticeForm
-          options={options}
+        <PracticeForm
+          username={displayName}
           generationDisabled={generationDisabled}
           generationDisabledMessage={generationDisabledMessage}
         />
