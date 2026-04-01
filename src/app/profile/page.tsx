@@ -7,6 +7,8 @@ import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
 import { fetchProfile } from "@/lib/profile/data";
 import { fetchAttempts, fetchWorksheets } from "@/lib/worksheet/data";
 import { ViewportSection } from "@/components/viewport-section";
+import { fetchUserBadges, fetchCurrentChallengeProgress } from "@/lib/gamification/data";
+import { getLevelInfo, getCurrentWeekChallenge, BADGE_DEFINITIONS, WEEKLY_CHALLENGES } from "@/lib/gamification/types";
 
 function toTitleCase(value: string) {
   return value.replace(/\w\S*/g, (word) => {
@@ -22,12 +24,14 @@ export default async function ProfilePage({
   await searchParams;
   const user = await requireUser("/profile");
   const fallbackName = (user.email ?? "user").split("@")[0];
-  const [attempts, worksheets, billing, plans, profile] = await Promise.all([
+  const [attempts, worksheets, billing, plans, profile, userBadges, challengeProgress] = await Promise.all([
     fetchAttempts(user.id),
     fetchWorksheets(user.id),
     getCurrentSubscription(user.id),
     listActivePlans(),
-    fetchProfile(user.id)
+    fetchProfile(user.id),
+    fetchUserBadges(user.id),
+    fetchCurrentChallengeProgress(user.id),
   ]);
   const displayName = profile?.full_name?.trim() || fallbackName;
   const completedWorksheetIds = new Set(
@@ -53,6 +57,21 @@ export default async function ProfilePage({
     currentPlanId === "free"
       ? (billing.usage?.free_worksheets_used_lifetime ?? 0)
       : (billing.usage?.period_worksheets_used ?? 0);
+
+  // XP / Level
+  const totalXp = profile?.total_xp ?? 0;
+  const { current: currentLevel, next: nextLevel, progressPct } = getLevelInfo(totalXp);
+
+  // Weekly challenge
+  const weeklyChallenge = getCurrentWeekChallenge();
+  const challengeGoal = weeklyChallenge.goal;
+  const challengeProgress_ = challengeProgress?.progress ?? 0;
+  const challengeCompleted = challengeProgress?.completed ?? false;
+  const challengePct = Math.min(Math.round((challengeProgress_ / challengeGoal) * 100), 100);
+
+  // Badges
+  const earnedBadgeIds = new Set(userBadges.map((b) => b.badge_id));
+  const earnedBadges = BADGE_DEFINITIONS.filter((b) => earnedBadgeIds.has(b.id));
 
   return (
     <ViewportSection innerClassName="space-y-10 pt-6 pb-20">
@@ -82,6 +101,128 @@ export default async function ProfilePage({
           <p className="mt-3 text-3xl font-semibold">{attempts.length}</p>
         </div>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="card p-6">
+          <p className="text-sm text-muted">Current streak</p>
+          <p className="mt-3 text-3xl font-semibold">
+            {profile?.current_streak ?? 0}
+            <span className="ml-2 text-base font-normal text-muted">
+              {(profile?.current_streak ?? 0) === 1 ? "day" : "days"}
+            </span>
+          </p>
+          <p className="mt-2 text-xs text-muted">
+            {(profile?.current_streak ?? 0) === 0
+              ? "Submit an attempt today to start your streak."
+              : "Keep practicing daily to maintain it."}
+          </p>
+        </div>
+        <div className="card p-6">
+          <p className="text-sm text-muted">Longest streak</p>
+          <p className="mt-3 text-3xl font-semibold">
+            {profile?.longest_streak ?? 0}
+            <span className="ml-2 text-base font-normal text-muted">
+              {(profile?.longest_streak ?? 0) === 1 ? "day" : "days"}
+            </span>
+          </p>
+          <p className="mt-2 text-xs text-muted">Your personal best.</p>
+        </div>
+      </div>
+
+      {/* Level & XP */}
+      <div className="card p-6 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted">Level</p>
+            <p className="mt-1 text-2xl font-semibold text-accent">{currentLevel.name}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-muted">Total XP</p>
+            <p className="mt-1 text-xl font-semibold">{totalXp.toLocaleString()}</p>
+          </div>
+        </div>
+        <div>
+          <div className="mb-2 flex items-center justify-between text-xs text-muted">
+            <span>Level {currentLevel.level}</span>
+            {nextLevel ? (
+              <span>
+                {totalXp - currentLevel.minXp} / {nextLevel.minXp - currentLevel.minXp} XP to {nextLevel.name}
+              </span>
+            ) : (
+              <span>Max level reached</span>
+            )}
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-ink-800">
+            <div
+              className="h-full rounded-full bg-accent transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        </div>
+        <p className="text-xs text-muted">
+          Each attempt earns 10 XP + up to 10 bonus XP based on your score.
+        </p>
+      </div>
+
+      {/* Weekly Challenge */}
+      <div className="card p-6 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted">Weekly challenge</p>
+            <p className="mt-1 text-xl font-semibold">{weeklyChallenge.title}</p>
+          </div>
+          {challengeCompleted ? (
+            <span className="rounded-full border border-green-500/40 px-3 py-1 text-xs uppercase tracking-[0.16em] text-green-400">
+              Completed
+            </span>
+          ) : (
+            <span className="rounded-full border border-ink-700 px-3 py-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+              In progress
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-muted">{weeklyChallenge.description}</p>
+        <div>
+          <div className="mb-2 flex items-center justify-between text-xs text-muted">
+            <span>{challengeProgress_} / {challengeGoal}</span>
+            <span>{challengePct}%</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-ink-800">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${challengeCompleted ? "bg-green-400" : "bg-accent"}`}
+              style={{ width: `${challengePct}%` }}
+            />
+          </div>
+        </div>
+        <p className="text-xs text-muted">
+          Challenges reset every Monday. Complete one to earn the Weekly Warrior badge.
+        </p>
+      </div>
+
+      {/* Badges */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Badges</h2>
+          <span className="text-sm text-muted">{earnedBadges.length} / {BADGE_DEFINITIONS.length}</span>
+        </div>
+        {earnedBadges.length === 0 ? (
+          <div className="card p-6 text-sm text-muted">
+            No badges yet. Submit a problem set to earn your first one.
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+            {earnedBadges.map((badge) => (
+              <div key={badge.id} className="card flex items-start gap-3 p-4">
+                <span className="text-2xl leading-none">{badge.icon}</span>
+                <div className="min-w-0">
+                  <p className="font-semibold">{badge.name}</p>
+                  <p className="mt-0.5 text-xs text-muted">{badge.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="card space-y-5 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

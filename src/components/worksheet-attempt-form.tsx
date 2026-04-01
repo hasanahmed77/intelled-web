@@ -2,10 +2,18 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { submitAttemptAction } from "@/app/actions/worksheet";
-import { ConfettiBurst } from "@/components/confetti-burst";
+import { ConfettiBurst, type ScoreRange } from "@/components/confetti-burst";
 import { LoadingBar } from "@/components/loading-bar";
 import { MathText } from "@/components/math-text";
 import { MathAnswerInput } from "@/components/math-answer-input";
+
+function getScoreRange(score: number): ScoreRange {
+  if (score === 100) return "perfect";
+  if (score >= 90) return "top";
+  if (score >= 75) return "high";
+  if (score >= 50) return "mid";
+  return "low";
+}
 
 type Question = {
   id: string;
@@ -46,15 +54,16 @@ export function WorksheetAttemptForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const hasCelebratedRef = useRef(Boolean(initialResult && initialResult.score >= 90));
+  const hasCelebratedRef = useRef(Boolean(initialResult));
   const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const [scoreRange, setScoreRange] = useState<ScoreRange>(
+    initialResult ? getScoreRange(initialResult.score) : "top"
+  );
 
   useEffect(() => {
-    if (!result || result.score < 90 || hasCelebratedRef.current) {
-      return;
-    }
-
+    if (!result || hasCelebratedRef.current) return;
     hasCelebratedRef.current = true;
+    setScoreRange(getScoreRange(result.score));
     setConfettiTrigger((current) => current + 1);
   }, [result]);
 
@@ -97,7 +106,7 @@ export function WorksheetAttemptForm({
 
   return (
     <div className="space-y-6">
-      <ConfettiBurst triggerKey={confettiTrigger} recipientName={username} />
+      <ConfettiBurst triggerKey={confettiTrigger} recipientName={username} scoreRange={scoreRange} />
       <div className="card space-y-4 p-6">
         <LoadingBar active={isPending} />
         {questions.map((question, index) => (

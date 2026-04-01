@@ -237,6 +237,26 @@ body {
     radial-gradient(circle at center, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.45) 62%, rgba(0, 0, 0, 0.7) 100%);
 }
 
+@keyframes fire-aura {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 214, 10, 0.7),
+      0 0 8px 2px rgba(255, 140, 0, 0.3),
+      0 0 14px 3px rgba(255, 214, 10, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1.5px rgba(255, 214, 10, 1),
+      0 0 10px 3px rgba(255, 140, 0, 0.45),
+      0 0 18px 5px rgba(255, 214, 10, 0.18);
+  }
+}
+
+.profile-fire-aura {
+  animation: fire-aura 1.4s ease-in-out infinite;
+  border-color: rgba(255, 214, 10, 0.85) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-navbar-drop,
   .animate-hero-rise,
@@ -251,7 +271,8 @@ body {
   .animate-celebration-pop,
   .animate-word-reveal,
   .animate-name-shine,
-  .animate-loading {
+  .animate-loading,
+  .profile-fire-aura {
     animation: none !important;
   }
 }

@@ -21,11 +21,32 @@ function mobileNavClass(active: boolean) {
 
 const practiceTooltip = "Sign in to practice, legend.";
 
+function CrackOverlay() {
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      viewBox="0 0 36 36"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* main crack — top centre down to bottom right */}
+      <path d="M17 1 L19 9 L23 7 L20 17 L29 13 L25 23 L35 22" stroke="white" strokeWidth="0.6" strokeOpacity="0.35" strokeLinecap="round" strokeLinejoin="round" />
+      {/* branch off main crack */}
+      <path d="M25 23 L28 30 L32 33" stroke="white" strokeWidth="0.5" strokeOpacity="0.25" strokeLinecap="round" />
+      {/* secondary crack — left side */}
+      <path d="M20 17 L13 22 L7 35" stroke="white" strokeWidth="0.5" strokeOpacity="0.28" strokeLinecap="round" strokeLinejoin="round" />
+      {/* top left splinter */}
+      <path d="M19 9 L11 5 L5 9" stroke="white" strokeWidth="0.4" strokeOpacity="0.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function NavbarClient() {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [currentStreak, setCurrentStreak] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const username = userEmail.split("@")[0] ?? "";
@@ -38,6 +59,14 @@ export function NavbarClient() {
       const { data } = await supabase.auth.getUser();
       setIsAuthed(Boolean(data.user));
       setUserEmail(data.user?.email ?? "");
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("current_streak")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        setCurrentStreak(profile?.current_streak ?? 0);
+      }
       setLoading(false);
     };
 
@@ -56,6 +85,7 @@ export function NavbarClient() {
   const pricingActive = pathname === "/pricing";
   const practiceActive = pathname.startsWith("/practice");
   const profileActive = pathname === "/profile";
+  const leaderboardActive = pathname === "/leaderboard";
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
@@ -84,6 +114,9 @@ export function NavbarClient() {
           <span className="text-xl leading-none">{menuOpen ? "×" : "☰"}</span>
         </button>
         <nav className="hidden items-center gap-6 text-sm lg:flex">
+          <Link className={desktopNavClass(leaderboardActive)} href="/leaderboard" prefetch>
+            Leaderboard
+          </Link>
           <Link className={desktopNavClass(pricingActive)} href="/pricing" prefetch>
             Pricing
           </Link>
@@ -115,18 +148,27 @@ export function NavbarClient() {
           ) : (
             <div className="flex items-center gap-3">
               {isAuthed ? (
-                <Link
-                  href="/profile"
-                  prefetch
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
-                    profileActive
-                      ? "border-accent text-accent"
-                      : "border-ink-700 text-white"
-                  }`}
-                  aria-label="Open profile"
-                >
-                  {initial || "U"}
-                </Link>
+                <div className="group relative">
+                  <Link
+                    href="/profile"
+                    prefetch
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
+                      currentStreak > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-400"
+                    } ${profileActive ? "border-accent text-accent" : ""}`}
+                    aria-label="Open profile"
+                  >
+                    {initial || "U"}
+                    {currentStreak === 0 ? <CrackOverlay /> : null}
+                  </Link>
+                  <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-black">
+                    {currentStreak}
+                  </span>
+                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-ink-700 bg-ink-950/95 px-3 py-2 text-center text-xs text-zinc-300 opacity-0 shadow-glow transition duration-200 group-hover:opacity-100">
+                    {currentStreak > 0
+                      ? `${currentStreak} day streak — you're on fire. Don't break the chain.`
+                      : "Practice daily to unlock your Super Saiyan form."}
+                  </div>
+                </div>
               ) : null}
               <AuthButton isAuthed={isAuthed} />
             </div>
@@ -136,6 +178,9 @@ export function NavbarClient() {
       {menuOpen ? (
         <div className="relative mx-4 mt-2 rounded-2xl border border-ink-700 bg-ink-950/95 p-4 shadow-glow lg:hidden">
           <nav className="flex flex-col gap-3 text-sm">
+            <Link className={mobileNavClass(leaderboardActive)} href="/leaderboard" prefetch onClick={() => setMenuOpen(false)}>
+              Leaderboard
+            </Link>
             <Link className={mobileNavClass(pricingActive)} href="/pricing" prefetch onClick={() => setMenuOpen(false)}>
               Pricing
             </Link>
@@ -164,16 +209,22 @@ export function NavbarClient() {
             ) : (
               <div className="mt-2 flex items-center gap-3" onClick={() => setMenuOpen(false)}>
                 {isAuthed ? (
-                  <Link
-                    href="/profile"
-                    prefetch
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
-                      profileActive ? "border-accent text-accent" : "border-ink-700 text-white"
-                    }`}
-                    aria-label="Open profile"
-                  >
-                    {initial || "U"}
-                  </Link>
+                  <div className="relative">
+                    <Link
+                      href="/profile"
+                      prefetch
+                      className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
+                        "profile-fire-aura"
+                      } ${profileActive ? "border-accent text-accent" : ""}`}
+                      aria-label="Open profile"
+                    >
+                      {initial || "U"}
+                      {currentStreak === 0 ? <CrackOverlay /> : null}
+                    </Link>
+                    <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-black">
+                      {currentStreak}
+                    </span>
+                  </div>
                 ) : null}
                 <AuthButton isAuthed={isAuthed} />
               </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateWorksheetsAction } from "@/app/actions/worksheet";
-import { ConfettiBurst } from "@/components/confetti-burst";
+import { ConfettiBurst, type ScoreRange } from "@/components/confetti-burst";
 import { LoadingBar } from "@/components/loading-bar";
 
 const promptExamples = [
@@ -41,7 +41,16 @@ export function PracticeForm({
   const [isHintVisible, setIsHintVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const [testTrigger, setTestTrigger] = useState(0);
+  const [testRange, setTestRange] = useState<ScoreRange>("top");
   const router = useRouter();
+
+  const testRanges: ScoreRange[] = ["perfect", "top", "high", "mid", "low"];
+  const handleTest = () => {
+    const next = testRanges[(testRanges.indexOf(testRange) + 1) % testRanges.length];
+    setTestRange(next);
+    setTestTrigger((t) => t + 1);
+  };
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -104,6 +113,7 @@ export function PracticeForm({
       }}
     >
       <ConfettiBurst triggerKey={confettiTrigger} recipientName={username} />
+      <ConfettiBurst triggerKey={testTrigger} recipientName={username} scoreRange={testRange} />
       {isGenerating ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 backdrop-blur-[3px]">
           <div className="loading-vignette absolute inset-0" />
@@ -177,6 +187,13 @@ export function PracticeForm({
           disabled={isPending || generationDisabled}
         >
           {isPending ? "Generating..." : generationDisabled ? "Can't go! :(" : "Go!"}
+        </button>
+        <button
+          className="button button-dark-accent"
+          type="button"
+          onClick={handleTest}
+        >
+          Test ({testRange})
         </button>
       </div>
       {generationDisabledMessage ? (

@@ -5,7 +5,7 @@ export const fetchProfile = cache(async (userId: string) => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("full_name, primary_learning_goal")
+    .select("full_name, primary_learning_goal, current_streak, longest_streak, last_activity_date, total_xp, level")
     .eq("id", userId)
     .maybeSingle();
 
