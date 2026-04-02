@@ -5,6 +5,7 @@ import { fetchProfile } from "@/lib/profile/data";
 import { fetchAttempts, fetchWorksheets } from "@/lib/worksheet/data";
 import { fetchUserBadges, fetchCurrentChallengeProgress } from "@/lib/gamification/data";
 import { getLevelInfo, getCurrentWeekChallenge, BADGE_DEFINITIONS } from "@/lib/gamification/types";
+import { calculateStreakStats } from "@/lib/streaks";
 import { ProfileDashboard } from "@/components/profile-dashboard";
 import type { BadgeItem, WorksheetItem } from "@/components/profile-dashboard";
 import type { BillingPlanId } from "@/lib/billing/types";
@@ -52,6 +53,7 @@ export default async function ProfilePage({
     attempts.length > 0
       ? Math.round(attempts.reduce((s, a) => s + (a.score ?? 0), 0) / attempts.length)
       : 0;
+  const streakStats = calculateStreakStats(attempts);
 
   const completedIds = new Set(
     attempts.map((a) => a.worksheet_id).filter((id): id is string => Boolean(id))
@@ -116,8 +118,8 @@ export default async function ProfilePage({
       average={average}
       worksheetCount={visibleWorksheetCount}
       attemptCount={attempts.length}
-      currentStreak={profile?.current_streak ?? 0}
-      longestStreak={profile?.longest_streak ?? 0}
+      currentStreak={streakStats.currentStreak}
+      longestStreak={streakStats.longestStreak}
       totalXp={totalXp}
       levelNumber={lvl.level}
       levelName={lvl.name}

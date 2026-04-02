@@ -2,6 +2,8 @@ import { fetchLeaderboard } from "@/lib/gamification/data";
 import { LEVELS } from "@/lib/gamification/types";
 import { ViewportSection } from "@/components/viewport-section";
 
+export const dynamic = "force-dynamic";
+
 function levelName(level: number): string {
   return LEVELS[Math.max(0, Math.min(level - 1, LEVELS.length - 1))].name;
 }

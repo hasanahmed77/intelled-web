@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { calculateStreakStats } from "@/lib/streaks";
 import { AuthButton } from "@/components/auth-button";
 
 function desktopNavClass(active: boolean) {
@@ -52,11 +53,11 @@ export function NavbarClient() {
   const fetchStreak = async (userId: string) => {
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase
-      .from("profiles")
-      .select("current_streak")
-      .eq("id", userId)
-      .maybeSingle();
-    setCurrentStreak(data?.current_streak ?? 0);
+      .from("worksheet_attempts")
+      .select("created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    setCurrentStreak(calculateStreakStats(data ?? []).currentStreak);
   };
 
   useEffect(() => {

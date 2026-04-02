@@ -41,7 +41,7 @@ const EDUCATION_TYPE_CHOICES: SelectChoice[] = [
 ];
 
 const O_LEVEL_SUBJECT_CHOICES: SelectChoice[] = [
-  { label: "Mathematics", value: "Mathematics", available: true },
+  { label: "Mathematics B/D", value: "Mathematics B/D", available: true },
   { label: "Pure Mathematics", value: "Pure Mathematics", available: false },
   { label: "Physics", value: "Physics", available: false },
   { label: "Chemistry", value: "Chemistry", available: false },
@@ -120,7 +120,7 @@ export function StaticPracticeForm({
   const topicOptions = useMemo<TopicChoice[]>(() => {
     if (!educationType || !subject) return [];
 
-    if (educationType === "O Level" && subject === "Mathematics") {
+    if (educationType === "O Level" && subject === "Mathematics B/D") {
       const availableTopics = new Set(
         options
           .filter(
