@@ -15,18 +15,18 @@ function toTitleCase(value: string) {
 
 function SectionHeading({ title, meta }: { title: string; meta?: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-ink-800 pb-3">
+    <div className="flex flex-col gap-2 border-b border-ink-800 pb-3 sm:flex-row sm:items-center sm:justify-between">
       <h2 className="text-lg font-semibold">{title}</h2>
-      {meta && <span className="text-sm text-muted">{meta}</span>}
+      {meta && <span className="text-sm text-muted sm:text-right">{meta}</span>}
     </div>
   );
 }
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="card p-6">
+    <div className="card p-5 sm:p-6">
       <p className="text-sm text-muted">{label}</p>
-      <p className="mt-3 text-3xl font-semibold">{value}</p>
+      <p className="mt-3 text-2xl font-semibold sm:text-3xl">{value}</p>
     </div>
   );
 }
@@ -174,19 +174,19 @@ function ProblemSetsTab({
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2">
             {currentPageItems.map((ws) => (
               <Link
                 key={ws.id}
-                className="card group p-5 transition hover:border-accent"
+                className="card group p-4 transition hover:border-accent sm:p-5"
                 href={ws.source === "static" ? `/practice/${ws.id}` : `/ai-practice/${ws.id}`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-semibold leading-snug transition group-hover:text-accent">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <h3 className="min-w-0 text-sm font-semibold leading-snug transition group-hover:text-accent sm:text-base">
                     {toTitleCase(ws.title)}
                   </h3>
                   <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${
+                    className={`inline-flex w-fit shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${
                       ws.done
                         ? "border-green-500/40 text-green-400"
                         : "border-amber-500/40 text-amber-300"
@@ -195,7 +195,7 @@ function ProblemSetsTab({
                     {ws.done ? "Complete" : "Incomplete"}
                   </span>
                 </div>
-                <div className="mt-4 flex items-center justify-between text-xs text-muted">
+                <div className="mt-4 flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
                   <span className="uppercase tracking-widest">{ws.difficulty}</span>
                   <span>{new Date(ws.created_at).toLocaleDateString()}</span>
                 </div>
@@ -210,7 +210,7 @@ function ProblemSetsTab({
                   Loading page
                 </span>
               ) : null}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={() => goToPage(page - 1)}
@@ -330,7 +330,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
         <SectionHeading title="Overview" />
         <div>
           <p className="mb-3 text-xs uppercase tracking-widest text-muted">Stats</p>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             <StatCard label="Average score" value={`${props.average}%`} />
             <StatCard label="Problem sets generated" value={props.worksheetCount} />
             <StatCard label="Attempts submitted" value={props.attemptCount} />
@@ -338,10 +338,10 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
         </div>
         <div>
           <p className="mb-3 text-xs uppercase tracking-widest text-muted">Streaks</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="card p-6">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="card p-5 sm:p-6">
               <p className="text-sm text-muted">Current streak</p>
-              <p className="mt-3 text-3xl font-semibold">
+              <p className="mt-3 text-2xl font-semibold sm:text-3xl">
                 {streak}
                 <span className="ml-2 text-base font-normal text-muted">
                   {streak === 1 ? "day" : "days"}
@@ -353,9 +353,9 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
                   : "Keep practicing daily to maintain it."}
               </p>
             </div>
-            <div className="card p-6">
+            <div className="card p-5 sm:p-6">
               <p className="text-sm text-muted">Longest streak</p>
-              <p className="mt-3 text-3xl font-semibold">
+              <p className="mt-3 text-2xl font-semibold sm:text-3xl">
                 {longest}
                 <span className="ml-2 text-base font-normal text-muted">
                   {longest === 1 ? "day" : "days"}
@@ -372,9 +372,9 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
       <div className="space-y-6">
         <SectionHeading title="Progress" />
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           {/* Level card */}
-          <div className="card flex flex-col items-center gap-4 p-6">
+          <div className="card flex flex-col items-center gap-4 p-5 sm:p-6">
             <p className="self-start text-xs uppercase tracking-widest text-muted">Level</p>
             <CircleProgress
               pct={props.progressPct}
@@ -398,7 +398,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
           </div>
 
           {/* Weekly challenge card */}
-          <div className="card flex flex-col items-center gap-4 p-6">
+          <div className="card flex flex-col items-center gap-4 p-5 sm:p-6">
             <div className="flex w-full items-center justify-between">
               <p className="text-xs uppercase tracking-widest text-muted">Weekly Challenge</p>
               {props.challengeCompleted ? (
@@ -437,7 +437,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
         {props.earnedBadges.length > 0 && (
           <div>
             <p className="mb-3 text-xs uppercase tracking-widest text-muted">Earned</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 xl:grid-cols-2">
               {props.earnedBadges.map((badge) => (
                 <div key={badge.id} className="card flex items-center gap-4 p-4">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-2xl">
@@ -455,7 +455,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
         {props.lockedBadges.length > 0 && (
           <div>
             <p className="mb-3 text-xs uppercase tracking-widest text-muted">Locked</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 xl:grid-cols-2">
               {props.lockedBadges.map((badge) => (
                 <div key={badge.id} className="card flex items-center gap-4 p-4 opacity-40 grayscale">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-800 text-2xl">
@@ -491,17 +491,17 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
     content = (
       <div className="space-y-6">
         <SectionHeading title="Subscription" />
-        <div className="card space-y-6 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="card space-y-6 p-5 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
               <p className="text-xs text-muted">Current plan</p>
-              <p className="mt-1 text-2xl font-semibold uppercase">{props.planName}</p>
+              <p className="mt-1 text-xl font-semibold uppercase sm:text-2xl">{props.planName}</p>
             </div>
-            <span className="rounded-full border border-ink-700 px-3 py-1 text-xs uppercase tracking-widest text-zinc-300">
+            <span className="inline-flex w-fit rounded-full border border-ink-700 px-3 py-1 text-xs uppercase tracking-widest text-zinc-300">
               {props.planStatus.toUpperCase()}
             </span>
           </div>
-          <div className="grid gap-6 border-t border-ink-800 pt-5 sm:grid-cols-3">
+          <div className="grid gap-6 border-t border-ink-800 pt-5 md:grid-cols-3">
             <div>
               <p className="text-xs text-muted">Period ends</p>
               <p className="mt-2 text-base font-medium">
@@ -527,7 +527,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
             </div>
           </div>
           {props.planId !== "free" ? (
-            <div className="grid gap-6 border-t border-ink-800 pt-5 sm:grid-cols-2">
+            <div className="grid gap-6 border-t border-ink-800 pt-5 md:grid-cols-2">
               <div>
                 <p className="text-xs text-muted">AI sets used</p>
                 <p className="mt-2 text-base font-medium">
@@ -544,7 +544,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
             </div>
           ) : null}
           {props.planId !== "free" && (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-ink-800 pt-5">
+            <div className="flex flex-col gap-4 border-t border-ink-800 pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <p className="text-sm text-muted">
                 Cancellation takes effect at the end of the current billing period.
               </p>
@@ -565,7 +565,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
           )}
         </div>
         {props.planId === "free" && (
-          <div className="card flex flex-wrap items-center justify-between gap-4 p-6">
+          <div className="card flex flex-col gap-4 p-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-6">
             <div>
               <p className="font-semibold">Upgrade your plan</p>
               <p className="mt-1 text-sm text-muted">
@@ -582,10 +582,10 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
   }
 
   return (
-    <div className="pt-[calc(var(--navbar-h)+1.5rem)] pb-20">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-[calc(var(--navbar-h)+1rem)] sm:px-6 sm:pt-[calc(var(--navbar-h)+1.5rem)]">
       {/* Page header */}
-      <div className="mb-8 space-y-2">
-        <h1 className="text-3xl font-semibold">
+      <div className="mb-6 space-y-3 sm:mb-8">
+        <h1 className="break-words text-2xl font-semibold sm:text-3xl">
           <AnimatedName name={props.displayName} />
         </h1>
         {props.earnedBadges.length > 0 && (
@@ -605,7 +605,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
       </div>
 
       {/* Two-column layout */}
-      <div className="flex gap-8">
+      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
         <ProfileSidebar
           activeTab={tab}
           onTabChange={switchTab}
