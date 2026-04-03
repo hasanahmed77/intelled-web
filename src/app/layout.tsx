@@ -4,9 +4,28 @@ import "./globals.css";
 import { NavbarClient } from "@/components/navbar-client";
 import { Footer } from "@/components/footer";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://intelled.org";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  applicationName: "intellED",
   title: "intellED",
   description: "Generate personalized problem sets with adaptive difficulty.",
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "intellED",
+    title: "intellED",
+    description: "Generate personalized problem sets with adaptive difficulty."
+  },
+  twitter: {
+    card: "summary",
+    title: "intellED",
+    description: "Generate personalized problem sets with adaptive difficulty."
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -22,9 +41,23 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "intellED",
+    alternateName: "intelled.org",
+    url: siteUrl
+  };
+
   return (
     <html lang="en">
       <body>
+        <Script
+          id="website-jsonld"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <Script id="mathjax-config" strategy="beforeInteractive">
           {`window.MathJax = {
             tex: {
