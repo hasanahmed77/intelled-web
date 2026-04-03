@@ -8,9 +8,12 @@ export const metadata: Metadata = {
   title: "intellED",
   description: "Generate personalized problem sets with adaptive difficulty.",
   icons: {
-    icon: "/brand/logo.svg",
-    shortcut: "/brand/logo.svg",
-    apple: "/brand/logo.svg"
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" }
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png"
   }
 };
 
