@@ -3,6 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 import { NavbarClient } from "@/components/navbar-client";
 import { Footer } from "@/components/footer";
+import { getUser, isAdminEmail } from "@/lib/auth";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://intelled.org";
 
@@ -36,11 +37,13 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getUser();
+  const isAdmin = isAdminEmail(user?.email);
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -88,7 +91,7 @@ export default function RootLayout({
         />
         <div className="flex min-h-screen flex-col bg-grid">
           <div className="relative z-10 flex min-h-screen flex-col">
-            <NavbarClient />
+            <NavbarClient isAdmin={isAdmin} />
             <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-0 pt-0">
               {children}
             </main>

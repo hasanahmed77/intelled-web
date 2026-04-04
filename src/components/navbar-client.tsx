@@ -41,7 +41,7 @@ function CrackOverlay() {
   );
 }
 
-export function NavbarClient() {
+export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -164,6 +164,7 @@ export function NavbarClient() {
   const aiPracticeActive = pathname === "/ai-practice" || pathname.startsWith("/ai-practice/");
   const profileActive = pathname === "/profile";
   const leaderboardActive = pathname === "/leaderboard";
+  const adminActive = pathname === "/admin/payments" || pathname.startsWith("/admin/");
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
@@ -192,6 +193,11 @@ export function NavbarClient() {
           <span className="text-xl leading-none">{menuOpen ? "×" : "☰"}</span>
         </button>
         <nav className="hidden items-center gap-6 text-sm lg:flex">
+          {isAdmin ? (
+            <Link className={desktopNavClass(adminActive)} href="/admin/payments" prefetch onClick={handleNavClick("/admin/payments")}>
+              Admin
+            </Link>
+          ) : null}
           <Link className={desktopNavClass(leaderboardActive)} href="/leaderboard" prefetch onClick={handleNavClick("/leaderboard")}>
             Leaderboard
           </Link>
@@ -282,6 +288,11 @@ export function NavbarClient() {
       {menuOpen ? (
         <div className="relative mx-4 mt-2 rounded-2xl border border-ink-700 bg-ink-950/95 p-4 shadow-glow lg:hidden">
           <nav className="flex flex-col gap-3 text-sm">
+            {isAdmin ? (
+              <Link className={mobileNavClass(adminActive)} href="/admin/payments" prefetch onClick={handleNavClick("/admin/payments", () => setMenuOpen(false))}>
+                Admin
+              </Link>
+            ) : null}
             <Link className={mobileNavClass(leaderboardActive)} href="/leaderboard" prefetch onClick={handleNavClick("/leaderboard", () => setMenuOpen(false))}>
               Leaderboard
             </Link>

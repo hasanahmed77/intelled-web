@@ -514,6 +514,106 @@ export async function activateDummySubscription(
   };
 }
 
+export async function activateManualSubscription(
+  userId: string,
+  planId: Exclude<BillingPlanId, "free">,
+  transactionId: string,
+  metadata: Record<string, unknown> = {}
+) {
+  const supabase = createSupabaseAdminClient();
+
+  await ensureBillingRows(userId);
+  const current = await refreshSubscriptionStateDirect(userId);
+  const { data: plan, error: planError } = await supabase
+    .from("billing_plans")
+    .select(PLAN_SELECT)
+    .eq("id", planId)
+    .eq("active", true)
+    .single();
+
+  if (planError || !plan) {
+    throw new Error(planError?.message ?? "Selected plan is not available.");
+  }
+
+  const now = new Date();
+  const currentPeriodEnd = current.subscription.period_end
+    ? new Date(current.subscription.period_end)
+    : null;
+  const shouldExtend =
+    current.subscription.plan_id === planId &&
+    currentPeriodEnd !== null &&
+    currentPeriodEnd.getTime() > now.getTime() &&
+    !current.subscription.cancel_at_period_end;
+
+  const periodStart = shouldExtend
+    ? current.subscription.period_start ?? now.toISOString()
+    : now.toISOString();
+  const periodEndDate = shouldExtend ? new Date(currentPeriodEnd as Date) : new Date(now);
+  periodEndDate.setUTCDate(periodEndDate.getUTCDate() + plan.duration_days);
+
+  const orderId = buildOrderId("BKASH");
+  const paymentResult = await supabase.from("payment_transactions").insert({
+    user_id: userId,
+    plan_id: plan.id,
+    order_id: orderId,
+    provider: "bkash_manual",
+    provider_txn_id: transactionId,
+    amount_bdt: plan.price_bdt,
+    currency: "BDT",
+    status: "paid",
+    paid_at: now.toISOString(),
+    raw_payload: { kind: "manual_bkash", ...metadata }
+  });
+
+  if (paymentResult.error) {
+    throw new Error(paymentResult.error.message);
+  }
+
+  const updateSubscriptionResult = await supabase
+    .from("user_subscriptions")
+    .update({
+      plan_id: plan.id,
+      status: "active",
+      period_start: periodStart,
+      period_end: periodEndDate.toISOString(),
+      cancel_at_period_end: false,
+      auto_renew: false,
+      provider: "bkash_manual"
+    })
+    .eq("user_id", userId);
+
+  if (updateSubscriptionResult.error) {
+    throw new Error(updateSubscriptionResult.error.message);
+  }
+
+  const updateUsageResult = await supabase
+    .from("usage_counters")
+    .update({
+      period_anchor: periodStart,
+      period_static_problem_sets_used: 0,
+      period_ai_problem_sets_used: 0
+    })
+    .eq("user_id", userId);
+
+  if (updateUsageResult.error) {
+    throw new Error(updateUsageResult.error.message);
+  }
+
+  await logSubscriptionEvent(userId, plan.id as BillingPlanId, "activated", {
+    provider: "bkash_manual",
+    orderId,
+    transactionId
+  });
+
+  return {
+    ok: true,
+    plan: plan.id,
+    planName: plan.name,
+    period_start: periodStart,
+    period_end: periodEndDate.toISOString()
+  };
+}
+
 export async function cancelCurrentSubscription(userId: string) {
   const supabase = createSupabaseAdminClient();
 
