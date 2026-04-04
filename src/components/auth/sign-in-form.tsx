@@ -6,12 +6,15 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { LoadingBar } from "@/components/loading-bar";
+import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 
 export function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/practice";
@@ -19,12 +22,24 @@ export function SignInForm() {
   const handle = async () => {
     setLoading(true);
     setMessage(null);
+    if (!captchaToken) {
+      setMessage("Please complete the verification check.");
+      setLoading(false);
+      return;
+    }
     const supabase = createSupabaseBrowserClient();
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: {
+        captchaToken
+      }
+    });
 
     if (error) {
       setMessage(error.message);
+      setCaptchaResetKey((value) => value + 1);
     } else {
       router.push(redirectTo);
       router.refresh();
@@ -66,6 +81,7 @@ export function SignInForm() {
               Forgot password?
             </Link>
           </div>
+          <TurnstileWidget onTokenChange={setCaptchaToken} resetKey={captchaResetKey} />
         </div>
         <div className="flex flex-col gap-3">
           <button className="button button-primary" onClick={handle} disabled={loading}>

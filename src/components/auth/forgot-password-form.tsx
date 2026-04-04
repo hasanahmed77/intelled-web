@@ -4,25 +4,37 @@ import { useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { LoadingBar } from "@/components/loading-bar";
+import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
 
   const handle = async () => {
     setLoading(true);
     setMessage(null);
+    if (!captchaToken) {
+      setMessage("Please complete the verification check.");
+      setLoading(false);
+      return;
+    }
     const supabase = createSupabaseBrowserClient();
     const redirectTo =
       typeof window !== "undefined"
         ? `${window.location.origin}/auth/reset-password`
         : undefined;
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+      captchaToken
+    });
 
     if (error) {
       setMessage(error.message);
+      setCaptchaResetKey((value) => value + 1);
     } else {
       setMessage("Password reset link sent. Check your email.");
     }
@@ -48,6 +60,7 @@ export function ForgotPasswordForm() {
             onChange={(event) => setEmail(event.target.value)}
           />
           {message ? <p className="text-sm text-zinc-300">{message}</p> : null}
+          <TurnstileWidget onTokenChange={setCaptchaToken} resetKey={captchaResetKey} />
         </div>
         <div className="flex flex-col gap-3">
           <button className="button button-primary" onClick={handle} disabled={loading}>

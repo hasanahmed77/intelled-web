@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
@@ -78,7 +79,8 @@ export async function insertWorksheet(userId: string, worksheet: GeneratedWorksh
   return worksheetRow;
 }
 
-export async function listStaticQuestionBankOptions(): Promise<StaticPracticeCatalog> {
+const getCachedStaticQuestionBankOptions = unstable_cache(
+  async (): Promise<StaticPracticeCatalog> => {
   const supabase = createSupabaseAdminClient();
   const [
     { data: optionRows, error: optionError },
@@ -133,6 +135,13 @@ export async function listStaticQuestionBankOptions(): Promise<StaticPracticeCat
       sortOrder: row.sort_order as number
     }))
   };
+  },
+  ["static-question-bank-options"],
+  { revalidate: 3600, tags: ["static-question-bank-options"] }
+);
+
+export async function listStaticQuestionBankOptions(): Promise<StaticPracticeCatalog> {
+  return getCachedStaticQuestionBankOptions();
 }
 
 export async function createStaticWorksheetFromBank(params: {

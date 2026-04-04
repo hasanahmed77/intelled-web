@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { LoadingBar } from "@/components/loading-bar";
+import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 
 export function SignUpForm() {
   const [fullName, setFullName] = useState("");
@@ -15,6 +16,8 @@ export function SignUpForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [verificationPending, setVerificationPending] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/practice";
@@ -23,12 +26,18 @@ export function SignUpForm() {
     setLoading(true);
     setMessage(null);
     setVerificationPending(false);
+    if (!captchaToken) {
+      setMessage("Please complete the verification check.");
+      setLoading(false);
+      return;
+    }
     const supabase = createSupabaseBrowserClient();
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        captchaToken,
         data: {
           full_name: fullName.trim(),
           primary_learning_goal: primaryLearningGoal.trim()
@@ -38,6 +47,7 @@ export function SignUpForm() {
 
     if (error) {
       setMessage(error.message);
+      setCaptchaResetKey((value) => value + 1);
     } else {
       if (data.session) {
         router.push(redirectTo);
@@ -94,6 +104,7 @@ export function SignUpForm() {
               {message}
             </p>
           ) : null}
+          <TurnstileWidget onTokenChange={setCaptchaToken} resetKey={captchaResetKey} />
         </div>
         <div className="flex flex-col gap-3">
           <button className="button button-primary" onClick={handle} disabled={loading}>

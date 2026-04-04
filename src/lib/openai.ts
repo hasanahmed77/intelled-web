@@ -9,6 +9,7 @@ const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_TIMEOUT_MS = 60000;
+const OPENAI_DEBUG_LOGS = process.env.OPENAI_DEBUG_LOGS === "true";
 
 function parseOptionalNumber(value: string | undefined) {
   if (!value || value.trim().length === 0) {
@@ -261,32 +262,25 @@ async function callOpenAIJson(params: {
         inputTokens: usage.inputTokens,
         outputTokens: usage.outputTokens
       });
-      console.log(
-        "[OpenAI Usage]",
-        JSON.stringify({
-          operation: params.schemaName,
-          model: OPENAI_MODEL,
-          requestId: data?.id ?? null,
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-          totalTokens: usage.totalTokens,
-          estimatedUsd: cost.estimatedUsd,
-          pricingSource: cost.pricingSource
-        })
-      );
+      if (OPENAI_DEBUG_LOGS) {
+        console.log(
+          "[OpenAI Usage]",
+          JSON.stringify({
+            operation: params.schemaName,
+            model: OPENAI_MODEL,
+            requestId: data?.id ?? null,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
+            estimatedUsd: cost.estimatedUsd,
+            pricingSource: cost.pricingSource
+          })
+        );
+      }
       const content = extractMessageContent(data?.choices?.[0]?.message?.content);
       const jsonText = maybeExtractJson(content);
       const parsedOutput = JSON.parse(jsonText);
       const sanitizedOutput = sanitizeStrings(parsedOutput);
-      console.log(
-        "[OpenAI Output]",
-        JSON.stringify({
-          operation: params.schemaName,
-          model: OPENAI_MODEL,
-          requestId: data?.id ?? null,
-          output: sanitizedOutput
-        })
-      );
       return sanitizedOutput;
     } catch (error) {
       clearTimeout(timeout);

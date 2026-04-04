@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { calculateStreakStats } from "@/lib/streaks";
@@ -12,7 +13,7 @@ export interface LeaderboardEntry {
   level: number;
 }
 
-export const fetchLeaderboard = cache(async (): Promise<LeaderboardEntry[]> => {
+const getCachedLeaderboard = unstable_cache(async (): Promise<LeaderboardEntry[]> => {
   const supabase = createSupabaseAdminClient();
   const { data: profiles, error: profileError } = await supabase
     .from("profiles")
@@ -66,7 +67,11 @@ export const fetchLeaderboard = cache(async (): Promise<LeaderboardEntry[]> => {
       rank: index + 1,
       ...entry,
     }));
-});
+}, ["leaderboard"], { revalidate: 300, tags: ["leaderboard"] });
+
+export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
+  return getCachedLeaderboard();
+}
 
 export interface UserBadge {
   badge_id: string;

@@ -97,6 +97,10 @@ function buildOrderId(prefix: string) {
   return `${prefix}-${crypto.randomUUID().replaceAll("-", "").toUpperCase()}`;
 }
 
+function isDummyBillingEnabled() {
+  return process.env.NODE_ENV !== "production" || process.env.ALLOW_DUMMY_BILLING === "true";
+}
+
 async function ensureBillingRows(userId: string) {
   const supabase = createSupabaseAdminClient();
 
@@ -414,6 +418,10 @@ export async function activateDummySubscription(
   userId: string,
   planId: Exclude<BillingPlanId, "free">
 ) {
+  if (!isDummyBillingEnabled()) {
+    throw new Error("Dummy billing is disabled in production.");
+  }
+
   const supabase = createSupabaseAdminClient();
 
   await ensureBillingRows(userId);

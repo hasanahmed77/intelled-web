@@ -22,6 +22,8 @@ function mobileNavClass(active: boolean) {
 
 const practiceTooltip = "Sign in to practice, legend.";
 const aiPracticeTooltip = "Sign in to use AI Practice, legend.";
+const STREAK_CACHE_KEY = "intelled-navbar-streak";
+const STREAK_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function CrackOverlay() {
   return (
@@ -59,7 +61,12 @@ export function NavbarClient() {
       .select("created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
-    setCurrentStreak(calculateStreakStats(data ?? []).currentStreak);
+    const nextStreak = calculateStreakStats(data ?? []).currentStreak;
+    setCurrentStreak(nextStreak);
+    window.localStorage.setItem(
+      STREAK_CACHE_KEY,
+      JSON.stringify({ userId, value: nextStreak, updatedAt: Date.now() })
+    );
   };
 
   useEffect(() => {
@@ -73,7 +80,30 @@ export function NavbarClient() {
       setUserEmail(user?.email ?? "");
       setLoading(false);
       // Fetch streak in the background after unblocking the UI
-      if (user) fetchStreak(user.id);
+      if (user) {
+        const cachedRaw = window.localStorage.getItem(STREAK_CACHE_KEY);
+        if (cachedRaw) {
+          try {
+            const cached = JSON.parse(cachedRaw) as {
+              userId?: string;
+              value?: number;
+              updatedAt?: number;
+            };
+            if (
+              cached.userId === user.id &&
+              typeof cached.value === "number" &&
+              typeof cached.updatedAt === "number" &&
+              Date.now() - cached.updatedAt < STREAK_CACHE_TTL_MS
+            ) {
+              setCurrentStreak(cached.value);
+              return;
+            }
+          } catch {
+            window.localStorage.removeItem(STREAK_CACHE_KEY);
+          }
+        }
+        fetchStreak(user.id);
+      }
     };
 
     load();
@@ -85,6 +115,7 @@ export function NavbarClient() {
         fetchStreak(session.user.id);
       } else {
         setCurrentStreak(0);
+        window.localStorage.removeItem(STREAK_CACHE_KEY);
       }
     });
 

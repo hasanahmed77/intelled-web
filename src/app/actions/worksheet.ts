@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { consumeWorksheetCredit, refundWorksheetCredit } from "@/lib/billing/data";
+import { assertRateLimit } from "@/lib/security/rate-limit";
 import {
   getMaxTotalAnswerCharacters,
   MAX_ANSWER_CHARACTERS
@@ -28,6 +29,12 @@ const generateSchema = z.object({
 
 export async function generateWorksheetsAction(formData: FormData) {
   const user = await requireUser();
+  assertRateLimit({
+    key: `ai-generate:${user.id}`,
+    limit: 8,
+    windowMs: 60_000,
+    message: "Too many AI generation requests. Please wait a minute and try again."
+  });
   const parsed = generateSchema.safeParse({
     topic: formData.get("topic"),
     difficulty: formData.get("difficulty"),
@@ -80,6 +87,12 @@ const generateStaticSchema = z.object({
 
 export async function generateStaticWorksheetAction(formData: FormData) {
   const user = await requireUser();
+  assertRateLimit({
+    key: `static-generate:${user.id}`,
+    limit: 12,
+    windowMs: 60_000,
+    message: "Too many generation requests. Please wait a minute and try again."
+  });
   const parsed = generateStaticSchema.safeParse({
     educationType: formData.get("educationType"),
     subject: formData.get("subject"),
@@ -155,6 +168,12 @@ export async function submitAttemptAction(payload: {
   questions: { index: number; userAnswer: string }[];
 }) {
   const user = await requireUser();
+  assertRateLimit({
+    key: `submit-attempt:${user.id}`,
+    limit: 20,
+    windowMs: 60_000,
+    message: "Too many submissions in a short time. Please wait a minute and try again."
+  });
   const parsed = submitSchema.safeParse(payload);
   if (!parsed.success) {
     return {
