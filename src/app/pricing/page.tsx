@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ViewportSection } from "@/components/viewport-section";
 import { getUser } from "@/lib/auth";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
@@ -98,10 +99,10 @@ export default async function PricingPage() {
     <ViewportSection center>
       <div className="w-full space-y-12">
         <div className="space-y-4 text-center">
-          <h1 className="text-4xl font-semibold">Clear plans for static and AI practice.</h1>
+          <h1 className="text-4xl font-semibold">Premium plans for curated and AI practice.</h1>
           <p className="mx-auto max-w-2xl text-muted">
-            Every account starts on Free with 2 problem sets for life. Choose a plan based on
-            how much guided practice and AI-powered support you want each month.
+            Every account starts on Free with 2 problem sets for life. Choose a plan based on how
+            much guided practice and AI-powered support you want each month.
           </p>
         </div>
 
@@ -205,31 +206,30 @@ export default async function PricingPage() {
                     </button>
                   ) : (
                     <div className="mt-auto space-y-3">
-                      <button
-                        type="button"
-                        disabled
-                        className={`button w-full cursor-not-allowed opacity-60 ${
+                      <Link
+                        href={`/billing/manual?planId=${tier.id}`}
+                        className={`button w-full ${
                           tier.highlighted ? "button-primary" : "button-dark-accent"
                         }`}
                       >
-                        Coming soon
-                      </button>
+                        Pay with bKash
+                      </Link>
                       <p className="text-center text-xs text-muted">
-                        Payments are not live yet. All users are currently on Free.
+                        Manual verification. Access is activated after payment approval.
                       </p>
                     </div>
                   )
                 ) : (
-                  <span
-                    className={`mt-auto inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-medium cursor-not-allowed opacity-60 ${
+                  <Link
+                    href={`/auth/sign-in?redirect=${encodeURIComponent(`/billing/manual?planId=${tier.id}`)}`}
+                    className={`mt-auto inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-medium ${
                       tier.highlighted
                         ? "border-transparent bg-accent text-ink-950"
                         : "border-ink-700/60 bg-ink-900/80 text-accent"
                     }`}
-                    aria-disabled="true"
                   >
-                    Coming soon
-                  </span>
+                    Sign in to pay
+                  </Link>
                 )}
               </div>
             );
