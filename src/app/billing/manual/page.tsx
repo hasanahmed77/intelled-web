@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ViewportSection } from "@/components/viewport-section";
+import { FormPendingBar, FormPendingBarButton } from "@/components/form-pending-bar";
 import { submitManualPaymentRequestAction } from "@/app/actions/manual-billing";
 import { requireUser } from "@/lib/auth";
 import { listActivePlans } from "@/lib/billing/data";
@@ -43,7 +44,8 @@ export default async function ManualBillingPage({
 
         {params.status === "submitted" ? (
           <div className="card border-accent/40 bg-accent/10 p-4 text-sm text-zinc-100">
-            Payment request submitted. We will review it and activate your plan after verification.
+            Payment request submitted. We will review it, activate your plan after verification,
+            and email you the outcome.
           </div>
         ) : null}
 
@@ -54,17 +56,19 @@ export default async function ManualBillingPage({
         ) : null}
 
         <div className="grid items-stretch gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="card flex h-full flex-col space-y-6 p-6">
-            <div className="space-y-2">
-              <p className="text-sm uppercase tracking-[0.22em] text-accent">bKash checkout</p>
-              <h2 className="text-2xl font-semibold">Submit your bKash payment</h2>
-              <p className="text-sm text-muted">
-                Use your plan amount exactly. We verify against the transaction ID and the payer
-                number you submit here.
-              </p>
-            </div>
-
-            <form action={submitManualPaymentRequestAction} className="space-y-4">
+          <form
+            action={submitManualPaymentRequestAction}
+            className="card relative flex h-full flex-col space-y-6 overflow-hidden p-6"
+          >
+              <FormPendingBar />
+              <div className="space-y-2">
+                <p className="text-sm uppercase tracking-[0.22em] text-accent">bKash checkout</p>
+                <h2 className="text-2xl font-semibold">Submit your bKash payment</h2>
+                <p className="text-sm text-muted">
+                  Use your plan amount exactly. We verify against the transaction ID and the payer
+                  number you submit here.
+                </p>
+              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-200" htmlFor="planId">
                   Plan
@@ -126,11 +130,8 @@ export default async function ManualBillingPage({
                 />
               </div>
 
-              <button className="button button-primary w-full" type="submit">
-                Submit payment request
-              </button>
+              <FormPendingBarButton label="Submit payment request" scrollToTopOnClick />
             </form>
-          </div>
 
           <div className="flex h-full flex-col">
             <div className="card flex h-full flex-col space-y-4 p-6">
