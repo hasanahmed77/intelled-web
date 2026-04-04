@@ -1,4 +1,5 @@
 import { ViewportSection } from "@/components/viewport-section";
+import { FormPendingBar, FormPendingBarButton } from "@/components/form-pending-bar";
 import {
   approveManualPaymentRequestAction,
   rejectManualPaymentRequestAction
@@ -104,7 +105,8 @@ export default async function AdminPaymentsPage({
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
-                      <form action={approveManualPaymentRequestAction} className="space-y-3 rounded-2xl border border-ink-700 bg-ink-900/65 p-4">
+                      <form action={approveManualPaymentRequestAction} className="relative space-y-3 overflow-hidden rounded-2xl border border-ink-700 bg-ink-900/65 p-4">
+                        <FormPendingBar />
                         <input type="hidden" name="requestId" value={request.id} />
                         <div>
                           <label className="text-sm font-medium text-zinc-200" htmlFor={`approve-${request.id}`}>
@@ -118,12 +120,11 @@ export default async function AdminPaymentsPage({
                             className="mt-2 w-full rounded-2xl border border-ink-700 bg-ink-950/80 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-accent"
                           />
                         </div>
-                        <button className="button button-primary w-full" type="submit">
-                          Approve and activate
-                        </button>
+                        <FormPendingBarButton label="Approve and activate" />
                       </form>
 
-                      <form action={rejectManualPaymentRequestAction} className="space-y-3 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+                      <form action={rejectManualPaymentRequestAction} className="relative space-y-3 overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+                        <FormPendingBar />
                         <input type="hidden" name="requestId" value={request.id} />
                         <div>
                           <label className="text-sm font-medium text-zinc-200" htmlFor={`reject-${request.id}`}>
@@ -137,9 +138,10 @@ export default async function AdminPaymentsPage({
                             className="mt-2 w-full rounded-2xl border border-ink-700 bg-ink-950/80 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-red-300"
                           />
                         </div>
-                        <button className="button w-full border-red-500/50 text-red-200 hover:border-red-400 hover:text-red-100" type="submit">
-                          Reject request
-                        </button>
+                        <FormPendingBarButton
+                          label="Reject request"
+                          className="button w-full border-red-500/50 text-red-200 hover:border-red-400 hover:text-red-100"
+                        />
                       </form>
                     </div>
                   </div>

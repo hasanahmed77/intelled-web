@@ -138,6 +138,15 @@ body {
   }
 }
 
+@keyframes form-loading-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
 @keyframes loading-heartbeat {
   0%,
   100% {
@@ -219,6 +228,11 @@ body {
 
 .animate-card-fade-late {
   animation: card-fade 460ms cubic-bezier(0.22, 1, 0.36, 1) 400ms both;
+}
+
+.form-loading-bar {
+  animation: form-loading-slide 1.05s linear infinite;
+  will-change: transform;
 }
 
 .loading-heartbeat {
