@@ -33,7 +33,7 @@ export function SignInForm() {
       email,
       password,
       options: {
-        captchaToken
+        captchaToken: captchaToken ?? undefined
       }
     });
 

@@ -37,7 +37,7 @@ export function SignUpForm() {
       email,
       password,
       options: {
-        captchaToken,
+        captchaToken: captchaToken ?? undefined,
         data: {
           full_name: fullName.trim(),
           primary_learning_goal: primaryLearningGoal.trim()

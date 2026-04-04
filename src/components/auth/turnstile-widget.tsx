@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef } from "react";
 import Script from "next/script";
 
+export const turnstileEnabled = process.env.NEXT_PUBLIC_ENABLE_TURNSTILE === "true";
 const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 type TurnstileWidgetProps = {

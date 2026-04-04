@@ -29,7 +29,7 @@ export function ForgotPasswordForm() {
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
-      captchaToken
+      captchaToken: captchaToken ?? undefined
     });
 
     if (error) {
