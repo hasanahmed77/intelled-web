@@ -168,20 +168,20 @@ export default function HomePage() {
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-accent">Built for Exam Prep</p>
               <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-                O Level is live now.
+                O Level Math is live now.
                 <br />
                 More academic and test-prep tracks are on the way.
               </h2>
               <p className="mt-3 max-w-2xl text-sm text-zinc-300 sm:text-base">
-                Today, intellED is focused on O Level learners. Students can practice by topic and
-                difficulty inside curated sets, or switch to AI Practice for custom learning on any
-                concept they want to improve.
+                Today, intellED is focused on O Level Math learners. Students can practice by topic
+                and difficulty inside curated sets, or switch to AI Practice for custom learning on
+                any concept they want to improve.
               </p>
             </div>
 
             <div className="card p-4 sm:p-5">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Available now</p>
-              <p className="mt-2 text-xl font-semibold">O Level</p>
+              <p className="mt-2 text-xl font-semibold">O Level Math</p>
               <p className="mt-2 text-sm leading-6 text-zinc-300">
                 Topic-based curated practice with manual difficulty selection or auto difficulty.
               </p>
