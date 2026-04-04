@@ -18,7 +18,7 @@ const FALLBACK_PLANS: BillingPlan[] = [
   },
   {
     id: "static_monthly",
-    name: "Static Monthly",
+    name: "Essential",
     interval: "monthly",
     price_bdt: 149,
     duration_days: 30,
@@ -29,23 +29,23 @@ const FALLBACK_PLANS: BillingPlan[] = [
   },
   {
     id: "hybrid_monthly",
-    name: "Static + AI Monthly",
+    name: "Plus",
     interval: "monthly",
-    price_bdt: 449,
+    price_bdt: 299,
     duration_days: 30,
     static_problem_sets_per_period: 120,
-    ai_problem_sets_per_period: 40,
+    ai_problem_sets_per_period: 30,
     lifetime_worksheet_limit: null,
     active: true
   },
   {
     id: "hybrid_yearly",
-    name: "Static + AI Yearly",
+    name: "Pro",
     interval: "yearly",
-    price_bdt: 4499,
+    price_bdt: 3999,
     duration_days: 365,
     static_problem_sets_per_period: 1800,
-    ai_problem_sets_per_period: 600,
+    ai_problem_sets_per_period: 480,
     lifetime_worksheet_limit: null,
     active: true
   }
@@ -625,7 +625,7 @@ export async function consumeWorksheetCredit(
       code: "PLAN_LIMIT_REACHED",
       message:
         source === "static"
-          ? "Your static problem set limit is reached for the current billing period."
+          ? "Your curated problem set limit is reached for the current billing period."
           : "Your AI problem set limit is reached for the current billing period."
     };
   }

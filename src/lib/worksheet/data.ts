@@ -6,6 +6,33 @@ import type {
   StaticQuestionBankItem
 } from "@/lib/worksheet/types";
 
+export type StaticOption = {
+  educationType: string;
+  subject: string;
+  topic: string;
+};
+
+export type SubjectCatalogEntry = {
+  educationType: string;
+  subject: string;
+  label: string;
+  sortOrder: number;
+};
+
+export type TopicCatalogEntry = {
+  educationType: string;
+  subject: string;
+  topic: string;
+  label: string;
+  sortOrder: number;
+};
+
+export type StaticPracticeCatalog = {
+  options: StaticOption[];
+  subjectCatalog: SubjectCatalogEntry[];
+  topicCatalog: TopicCatalogEntry[];
+};
+
 export async function getPerformanceDifficulty(userId: string): Promise<Difficulty> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -51,25 +78,61 @@ export async function insertWorksheet(userId: string, worksheet: GeneratedWorksh
   return worksheetRow;
 }
 
-export async function listStaticQuestionBankOptions() {
+export async function listStaticQuestionBankOptions(): Promise<StaticPracticeCatalog> {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("static_question_sets")
-    .select("education_type, subject, topic")
-    .eq("active", true)
-    .order("education_type", { ascending: true })
-    .order("subject", { ascending: true })
-    .order("topic", { ascending: true });
+  const [
+    { data: optionRows, error: optionError },
+    { data: subjectCatalogRows, error: subjectCatalogError },
+    { data: topicCatalogRows, error: topicCatalogError }
+  ] = await Promise.all([
+    supabase
+      .from("static_question_sets")
+      .select("education_type, subject, topic")
+      .eq("active", true)
+      .order("education_type", { ascending: true })
+      .order("subject", { ascending: true })
+      .order("topic", { ascending: true }),
+    supabase
+      .from("curriculum_subjects")
+      .select("education_type, subject, display_label, sort_order")
+      .eq("show_in_picker", true)
+      .order("education_type", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .order("display_label", { ascending: true }),
+    supabase
+      .from("curriculum_topics")
+      .select("education_type, subject, topic, display_label, sort_order")
+      .eq("show_in_picker", true)
+      .order("education_type", { ascending: true })
+      .order("subject", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .order("display_label", { ascending: true })
+  ]);
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (optionError) throw new Error(optionError.message);
+  if (subjectCatalogError) throw new Error(subjectCatalogError.message);
+  if (topicCatalogError) throw new Error(topicCatalogError.message);
 
-  return (data ?? []).map((row) => ({
-    educationType: row.education_type as string,
-    subject: row.subject as string,
-    topic: row.topic as string
-  }));
+  return {
+    options: (optionRows ?? []).map((row) => ({
+      educationType: row.education_type as string,
+      subject: row.subject as string,
+      topic: row.topic as string
+    })),
+    subjectCatalog: (subjectCatalogRows ?? []).map((row) => ({
+      educationType: row.education_type as string,
+      subject: row.subject as string,
+      label: row.display_label as string,
+      sortOrder: row.sort_order as number
+    })),
+    topicCatalog: (topicCatalogRows ?? []).map((row) => ({
+      educationType: row.education_type as string,
+      subject: row.subject as string,
+      topic: row.topic as string,
+      label: row.display_label as string,
+      sortOrder: row.sort_order as number
+    }))
+  };
 }
 
 export async function createStaticWorksheetFromBank(params: {
@@ -106,7 +169,7 @@ export async function createStaticWorksheetFromBank(params: {
   }>;
 
   if (variants.length === 0) {
-    throw new Error("No matching static problem set was found for that difficulty.");
+    throw new Error("No matching curated problem set was found for that difficulty.");
   }
 
   const { data: progress, error: progressError } = await supabase
@@ -141,7 +204,7 @@ export async function createStaticWorksheetFromBank(params: {
   );
 
   if (questions.length === 0) {
-    throw new Error("The selected static problem set has no questions.");
+    throw new Error("The selected curated problem set has no questions.");
   }
 
   const progressUpsert = await supabase.from("user_static_topic_progress").upsert({
@@ -176,7 +239,7 @@ export async function createStaticWorksheetFromBank(params: {
     .single();
 
   if (worksheetError || !worksheetRow) {
-    throw new Error(worksheetError?.message ?? "Failed to create static problem set");
+    throw new Error(worksheetError?.message ?? "Failed to create curated problem set");
   }
 
   const answerKeyQuestions = ((bankSet.questions as StaticQuestionBankItem[] | null) ?? []).map(

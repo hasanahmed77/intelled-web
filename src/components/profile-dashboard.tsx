@@ -10,7 +10,20 @@ import type { ProfileTab } from "@/components/profile-sidebar";
 import { fetchWorksheetPageAction } from "@/app/actions/profile";
 
 function toTitleCase(value: string) {
-  return value.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  return value.replace(/[A-Za-z0-9/]+/g, (word) => {
+    if (word.includes("/")) {
+      return word
+        .split("/")
+        .map((part) => (part.length <= 2 ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()))
+        .join("/");
+    }
+
+    if (word.length <= 2 && word === word.toUpperCase()) {
+      return word;
+    }
+
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
 }
 
 function SectionHeading({ title, meta }: { title: string; meta?: string }) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { submitAttemptAction } from "@/app/actions/worksheet";
 import { ConfettiBurst, type ScoreRange } from "@/components/confetti-burst";
 import { LoadingBar } from "@/components/loading-bar";
@@ -59,6 +60,7 @@ export function WorksheetAttemptForm({
   const [result, setResult] = useState<{ score: number; details: Result[] } | null>(initialResult);
   const [error, setError] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [evalStepIndex, setEvalStepIndex] = useState(0);
   const hasCelebratedRef = useRef(Boolean(initialResult));
   const [confettiTrigger, setConfettiTrigger] = useState(0);
@@ -68,6 +70,11 @@ export function WorksheetAttemptForm({
   const scoreRef = useRef<HTMLDivElement>(null);
 
   // Cycle through step messages while evaluating
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
   useEffect(() => {
     if (!isEvaluating) {
       setEvalStepIndex(0);
@@ -134,23 +141,27 @@ export function WorksheetAttemptForm({
       <ConfettiBurst triggerKey={confettiTrigger} recipientName={username} scoreRange={scoreRange} />
 
       {/* Fullscreen evaluation overlay */}
-      {isEvaluating ? (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/55 backdrop-blur-[3px]">
-          <div className="loading-vignette absolute inset-0" />
-          <div className="relative mx-4 flex w-full max-w-lg justify-center">
-            <div className="loading-heartbeat absolute inset-0 rounded-[1.75rem] bg-accent/10 blur-2xl" />
-            <div className="card relative w-full space-y-5 overflow-hidden px-7 py-7 text-center shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
-              <LoadingBar active />
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white">
-                Evaluating
-              </p>
-              <p className="animate-status-pulse mt-3 text-lg text-accent transition-opacity duration-500">
-                {evaluationSteps[evalStepIndex]}
-              </p>
+      {isMounted && isEvaluating
+        ? createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/55 backdrop-blur-[3px]">
+              <div className="loading-vignette absolute inset-0" />
+              <div className="relative mx-4 flex w-full max-w-lg justify-center">
+                <div className="loading-heartbeat absolute inset-0 rounded-[1.75rem] bg-accent/10 blur-2xl" />
+                <div className="card relative w-full space-y-5 overflow-hidden px-7 py-7 text-center shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+                  <LoadingBar active />
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-white">
+                    Evaluating
+                  </p>
+                  <p className="animate-status-pulse mt-3 text-lg text-accent transition-opacity duration-500">
+                    {evaluationSteps[evalStepIndex]}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      ) : null}
+            ,
+            document.body
+          )
+        : null}
 
       <div className="card space-y-4 p-6">
         <LoadingBar active={isEvaluating} />

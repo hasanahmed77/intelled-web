@@ -18,6 +18,25 @@ type StaticOption = {
   topic: string;
 };
 
+type SubjectCatalogEntry = {
+  educationType: string;
+  subject: string;
+  label: string;
+  sortOrder: number;
+};
+
+type TopicCatalogEntry = {
+  educationType: string;
+  subject: string;
+  topic: string;
+  label: string;
+  sortOrder: number;
+};
+
+function formatTopicLabel(label: string) {
+  return label.replace(/^\d+\s*:\s*/, "").replace(/\s+\d+$/, "");
+}
+
 type TopicChoice = {
   label: string;
   value: string;
@@ -40,33 +59,16 @@ const EDUCATION_TYPE_CHOICES: SelectChoice[] = [
   { label: "IELTS", value: "IELTS", available: false }
 ];
 
-const O_LEVEL_SUBJECT_CHOICES: SelectChoice[] = [
-  { label: "Mathematics B/D", value: "Mathematics B/D", available: true },
-  { label: "Pure Mathematics", value: "Pure Mathematics", available: false },
-  { label: "Physics", value: "Physics", available: false },
-  { label: "Chemistry", value: "Chemistry", available: false },
-  { label: "Biology", value: "Biology", available: false }
-];
-
-const O_LEVEL_MATH_CHAPTERS: Array<{ label: string; dbTopics: string[] }> = [
-  { label: "Number", dbTopics: ["Number", "Number Skills"] },
-  { label: "Sets", dbTopics: ["Sets"] },
-  { label: "Algebra", dbTopics: ["Algebra"] },
-  { label: "Functions", dbTopics: ["Functions"] },
-  { label: "Matrices", dbTopics: ["Matrices"] },
-  { label: "Geometry", dbTopics: ["Geometry"] },
-  { label: "Mensuration", dbTopics: ["Mensuration"] },
-  { label: "Vectors and transformation geometry", dbTopics: ["Vectors and transformation geometry"] },
-  { label: "Trigonometry", dbTopics: ["Trigonometry"] },
-  { label: "Statistics and probability", dbTopics: ["Statistics and probability"] }
-];
-
 export function StaticPracticeForm({
   options,
+  subjectCatalog,
+  topicCatalog,
   generationDisabled = false,
   generationDisabledMessage = null
 }: {
   options: StaticOption[];
+  subjectCatalog: SubjectCatalogEntry[];
+  topicCatalog: TopicCatalogEntry[];
   generationDisabled?: boolean;
   generationDisabledMessage?: string | null;
 }) {
@@ -91,68 +93,78 @@ export function StaticPracticeForm({
   const subjectOptions = useMemo<SelectChoice[]>(() => {
     if (!educationType) return [];
 
-    if (educationType === "O Level") {
-      const availableSubjects = new Set(
-        options
-          .filter((option) => option.educationType === educationType)
-          .map((option) => option.subject)
-      );
+    const availableSubjects = new Set(
+      options
+        .filter((option) => option.educationType === educationType)
+        .map((option) => option.subject)
+    );
+    const configuredSubjects = subjectCatalog
+      .filter((entry) => entry.educationType === educationType)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label));
 
-      return O_LEVEL_SUBJECT_CHOICES.map((choice) => ({
-        ...choice,
-        available: choice.available && availableSubjects.has(choice.value)
-      }));
-    }
-
-    return [
-      ...new Set(
-        options
-          .filter((option) => option.educationType === educationType)
-          .map((option) => option.subject)
-      )
-    ].map((option) => ({
-      label: option,
-      value: option,
-      available: true
+    const configuredChoices: SelectChoice[] = configuredSubjects.map((entry) => ({
+      label: entry.label,
+      value: entry.subject,
+      available: availableSubjects.has(entry.subject)
     }));
-  }, [educationType, options]);
+
+    const configuredSubjectValues = new Set(configuredSubjects.map((entry) => entry.subject));
+    const extraAvailableChoices: SelectChoice[] = [...availableSubjects]
+      .filter((subjectName) => !configuredSubjectValues.has(subjectName))
+      .sort((a, b) => a.localeCompare(b))
+      .map((subjectName) => ({
+        label: subjectName,
+        value: subjectName,
+        available: true
+      }));
+
+    return [...configuredChoices, ...extraAvailableChoices];
+  }, [educationType, options, subjectCatalog]);
 
   const topicOptions = useMemo<TopicChoice[]>(() => {
     if (!educationType || !subject) return [];
 
-    if (educationType === "O Level" && subject === "Mathematics B/D") {
-      const availableTopics = new Set(
-        options
-          .filter(
-            (option) => option.educationType === educationType && option.subject === subject
-          )
-          .map((option) => option.topic)
-      );
+    const availableTopics = new Set(
+      options
+        .filter(
+          (option) => option.educationType === educationType && option.subject === subject
+        )
+        .map((option) => option.topic)
+    );
+    const configuredTopics = topicCatalog
+      .filter((entry) => entry.educationType === educationType && entry.subject === subject)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label));
 
-      return O_LEVEL_MATH_CHAPTERS.map((chapter) => {
-        const matchedTopic = chapter.dbTopics.find((topicName) => availableTopics.has(topicName));
+    const groupedTopics = new Map<
+      string,
+      { label: string; sortOrder: number; aliases: string[] }
+    >();
+
+    for (const entry of configuredTopics) {
+      const key = `${entry.sortOrder}::${entry.label}`;
+      const existing = groupedTopics.get(key);
+      if (existing) {
+        existing.aliases.push(entry.topic);
+      } else {
+        groupedTopics.set(key, {
+          label: formatTopicLabel(entry.label),
+          sortOrder: entry.sortOrder,
+          aliases: [entry.topic]
+        });
+      }
+    }
+
+    return [...groupedTopics.values()]
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label))
+      .map((group) => {
+        const matchedTopic = group.aliases.find((topicName) => availableTopics.has(topicName));
         return {
-          label: chapter.label,
-          value: matchedTopic ?? chapter.dbTopics[0],
+          label: group.label,
+          value: matchedTopic ?? group.aliases[0],
           available: Boolean(matchedTopic)
         };
       });
-    }
-
-    return [
-      ...new Set(
-        options
-          .filter(
-            (option) => option.educationType === educationType && option.subject === subject
-          )
-          .map((option) => option.topic)
-      )
-    ].map((topicName) => ({
-      label: topicName,
-      value: topicName,
-      available: true
-    }));
-  }, [educationType, subject, options]);
+  }, [educationType, subject, options, topicCatalog]);
 
   useEffect(() => {
     if (!isPending) {
@@ -188,7 +200,7 @@ export function StaticPracticeForm({
               error:
                 error instanceof Error
                   ? error.message
-                  : "Failed to create static problem set."
+                  : "Failed to create curated problem set."
             });
           }
         });
@@ -268,7 +280,7 @@ export function StaticPracticeForm({
             <option value="">Select topic</option>
             {topicOptions.map((option) => (
               <option key={`${option.label}-${option.value}`} value={option.value} disabled={!option.available}>
-                {option.label}
+                {option.available ? option.label : `${option.label} (Coming soon)`}
               </option>
             ))}
           </select>

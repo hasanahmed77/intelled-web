@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { MouseEvent, useEffect, useState, useTransition } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { calculateStreakStats } from "@/lib/streaks";
 import { AuthButton } from "@/components/auth-button";
@@ -41,11 +41,13 @@ function CrackOverlay() {
 
 export function NavbarClient() {
   const pathname = usePathname();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [currentStreak, setCurrentStreak] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [, startTransition] = useTransition();
 
   const username = userEmail.split("@")[0] ?? "";
   const initial = username.charAt(0).toUpperCase();
@@ -101,6 +103,31 @@ export function NavbarClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleNavClick =
+    (href: string, afterNavigate?: () => void) => (event: MouseEvent<HTMLAnchorElement>) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      if (pathname === href) {
+        afterNavigate?.();
+        return;
+      }
+
+      event.preventDefault();
+      afterNavigate?.();
+      startTransition(() => {
+        router.push(href);
+      });
+    };
+
   const pricingActive = pathname === "/pricing";
   const practiceActive = pathname === "/practice" || pathname.startsWith("/practice/");
   const aiPracticeActive = pathname === "/ai-practice" || pathname.startsWith("/ai-practice/");
@@ -114,7 +141,7 @@ export function NavbarClient() {
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
       />
       <div className="relative mx-auto flex h-[var(--navbar-h)] w-full max-w-6xl items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex items-center" onClick={handleNavClick("/")}>
           <Image
             src="/brand/logo.svg"
             alt="intellED logo"
@@ -134,10 +161,10 @@ export function NavbarClient() {
           <span className="text-xl leading-none">{menuOpen ? "×" : "☰"}</span>
         </button>
         <nav className="hidden items-center gap-6 text-sm lg:flex">
-          <Link className={desktopNavClass(leaderboardActive)} href="/leaderboard" prefetch>
+          <Link className={desktopNavClass(leaderboardActive)} href="/leaderboard" prefetch onClick={handleNavClick("/leaderboard")}>
             Leaderboard
           </Link>
-          <Link className={desktopNavClass(pricingActive)} href="/pricing" prefetch>
+          <Link className={desktopNavClass(pricingActive)} href="/pricing" prefetch onClick={handleNavClick("/pricing")}>
             Pricing
           </Link>
           {loading ? (
@@ -145,7 +172,7 @@ export function NavbarClient() {
               Practice
             </span>
           ) : isAuthed ? (
-            <Link className={desktopNavClass(practiceActive)} href="/practice" prefetch>
+            <Link className={desktopNavClass(practiceActive)} href="/practice" prefetch onClick={handleNavClick("/practice")}>
               Practice
             </Link>
           ) : (
@@ -155,6 +182,7 @@ export function NavbarClient() {
                 href="/auth/sign-in?redirect=%2Fpractice"
                 prefetch
                 title={practiceTooltip}
+                onClick={handleNavClick("/auth/sign-in?redirect=%2Fpractice")}
               >
                 Practice
               </Link>
@@ -168,7 +196,7 @@ export function NavbarClient() {
               AI Practice
             </span>
           ) : isAuthed ? (
-            <Link className={desktopNavClass(aiPracticeActive)} href="/ai-practice" prefetch>
+            <Link className={desktopNavClass(aiPracticeActive)} href="/ai-practice" prefetch onClick={handleNavClick("/ai-practice")}>
               AI Practice
             </Link>
           ) : (
@@ -178,6 +206,7 @@ export function NavbarClient() {
                 href="/auth/sign-in?redirect=%2Fai-practice"
                 prefetch
                 title={aiPracticeTooltip}
+                onClick={handleNavClick("/auth/sign-in?redirect=%2Fai-practice")}
               >
                 AI Practice
               </Link>
@@ -195,6 +224,7 @@ export function NavbarClient() {
                   <Link
                     href="/profile"
                     prefetch
+                    onClick={handleNavClick("/profile")}
                     className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
                       currentStreak > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-400"
                     } ${profileActive ? "border-accent text-accent" : ""}`}
@@ -221,10 +251,10 @@ export function NavbarClient() {
       {menuOpen ? (
         <div className="relative mx-4 mt-2 rounded-2xl border border-ink-700 bg-ink-950/95 p-4 shadow-glow lg:hidden">
           <nav className="flex flex-col gap-3 text-sm">
-            <Link className={mobileNavClass(leaderboardActive)} href="/leaderboard" prefetch onClick={() => setMenuOpen(false)}>
+            <Link className={mobileNavClass(leaderboardActive)} href="/leaderboard" prefetch onClick={handleNavClick("/leaderboard", () => setMenuOpen(false))}>
               Leaderboard
             </Link>
-            <Link className={mobileNavClass(pricingActive)} href="/pricing" prefetch onClick={() => setMenuOpen(false)}>
+            <Link className={mobileNavClass(pricingActive)} href="/pricing" prefetch onClick={handleNavClick("/pricing", () => setMenuOpen(false))}>
               Pricing
             </Link>
             {loading ? (
@@ -232,7 +262,7 @@ export function NavbarClient() {
                 Practice
               </span>
             ) : isAuthed ? (
-              <Link className={mobileNavClass(practiceActive)} href="/practice" prefetch onClick={() => setMenuOpen(false)}>
+              <Link className={mobileNavClass(practiceActive)} href="/practice" prefetch onClick={handleNavClick("/practice", () => setMenuOpen(false))}>
                 Practice
               </Link>
             ) : (
@@ -240,7 +270,7 @@ export function NavbarClient() {
                 className="rounded-lg px-3 py-2 text-zinc-200 transition hover:bg-ink-900/70"
                 href="/auth/sign-in?redirect=%2Fpractice"
                 prefetch
-                onClick={() => setMenuOpen(false)}
+                onClick={handleNavClick("/auth/sign-in?redirect=%2Fpractice", () => setMenuOpen(false))}
                 title={practiceTooltip}
               >
                 Practice
@@ -251,7 +281,7 @@ export function NavbarClient() {
                 AI Practice
               </span>
             ) : isAuthed ? (
-              <Link className={mobileNavClass(aiPracticeActive)} href="/ai-practice" prefetch onClick={() => setMenuOpen(false)}>
+              <Link className={mobileNavClass(aiPracticeActive)} href="/ai-practice" prefetch onClick={handleNavClick("/ai-practice", () => setMenuOpen(false))}>
                 AI Practice
               </Link>
             ) : (
@@ -259,7 +289,7 @@ export function NavbarClient() {
                 className="rounded-lg px-3 py-2 text-zinc-200 transition hover:bg-ink-900/70"
                 href="/auth/sign-in?redirect=%2Fai-practice"
                 prefetch
-                onClick={() => setMenuOpen(false)}
+                onClick={handleNavClick("/auth/sign-in?redirect=%2Fai-practice", () => setMenuOpen(false))}
                 title={aiPracticeTooltip}
               >
                 AI Practice
@@ -274,6 +304,7 @@ export function NavbarClient() {
                     <Link
                       href="/profile"
                       prefetch
+                      onClick={handleNavClick("/profile", () => setMenuOpen(false))}
                       className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
                         currentStreak > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-400"
                       } ${profileActive ? "border-accent text-accent" : ""}`}

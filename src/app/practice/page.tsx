@@ -9,7 +9,7 @@ import { ViewportSection } from "@/components/viewport-section";
 export default async function PracticePage() {
   const user = await requireUser("/practice");
   const fallbackName = (user.email ?? "user").split("@")[0];
-  const [profile, billing, plans, options] = await Promise.all([
+  const [profile, billing, plans, catalog] = await Promise.all([
     fetchProfile(user.id),
     getCurrentSubscription(user.id),
     listActivePlans(),
@@ -40,7 +40,7 @@ export default async function PracticePage() {
     billing.usage.period_static_problem_sets_used >= currentPlan.static_problem_sets_per_period
   ) {
     generationDisabled = true;
-    generationDisabledMessage = "Your static problem set limit is reached for the current billing period.";
+    generationDisabledMessage = "Your curated problem set limit is reached for the current billing period.";
   }
 
   return (
@@ -57,7 +57,9 @@ export default async function PracticePage() {
         </div>
 
         <StaticPracticeForm
-          options={options}
+          options={catalog.options}
+          subjectCatalog={catalog.subjectCatalog}
+          topicCatalog={catalog.topicCatalog}
           generationDisabled={generationDisabled}
           generationDisabledMessage={generationDisabledMessage}
         />

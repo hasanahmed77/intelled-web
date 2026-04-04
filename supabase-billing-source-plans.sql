@@ -29,9 +29,9 @@ insert into public.billing_plans (
   active
 )
 values
-  ('static_monthly', 'Static Monthly', 'monthly', 149, 30, null, 120, 0, null, true),
-  ('hybrid_monthly', 'Static + AI Monthly', 'monthly', 449, 30, null, 120, 40, null, true),
-  ('hybrid_yearly', 'Static + AI Yearly', 'yearly', 4499, 365, null, 1800, 600, null, true)
+  ('static_monthly', 'Essential', 'monthly', 149, 30, null, 120, 0, null, true),
+  ('hybrid_monthly', 'Plus', 'monthly', 299, 30, null, 120, 30, null, true),
+  ('hybrid_yearly', 'Pro', 'yearly', 3999, 365, null, 1800, 480, null, true)
 on conflict (id) do update
 set
   name = excluded.name,

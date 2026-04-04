@@ -7,8 +7,9 @@ type Tier = {
   id: Exclude<BillingPlanId, "free">;
   name: string;
   cadence: string;
-  staticCredits: string;
-  aiCredits: string;
+  originalPriceBdt: number;
+  primaryAllowance: string;
+  secondaryAllowance: string;
   description: string;
   badge: string | null;
   highlighted: boolean;
@@ -20,45 +21,48 @@ const tiers: Tier[] = [
     id: "static_monthly",
     name: "Essential",
     cadence: "/ month",
-    staticCredits: "120 static problem sets",
-    aiCredits: "0 AI problem sets",
-    description: "Best if you want lower-cost practice with static curated sets and AI evaluation.",
+    originalPriceBdt: 199,
+    primaryAllowance: "120 curated practice sets",
+    secondaryAllowance: "AI-assisted evaluation included",
+    description: "For lower-cost practice with curated problem sets and AI evaluation.",
     badge: null,
     highlighted: false,
     features: [
-      "Static database-backed problem sets",
-      "AI evaluation on every submission",
-      "More generous monthly volume"
+      "Curated problem sets across multiple difficulty levels",
+      "AI-assisted evaluation on every submission",
+      "Ideal if you want strong daily practice without on-demand generation"
     ]
   },
   {
     id: "hybrid_monthly",
     name: "Plus",
     cadence: "/ month",
-    staticCredits: "120 static problem sets",
-    aiCredits: "40 AI problem sets",
-    description: "Balanced monthly access across static practice and AI-generated sets.",
+    originalPriceBdt: 349,
+    primaryAllowance: "120 curated practice sets",
+    secondaryAllowance: "30 AI-generated practice sets",
+    description: "For learners who want the full mix of curated practice and premium AI-generated sets.",
     badge: "Most Popular",
     highlighted: true,
     features: [
-      "Everything in Static Monthly",
-      "AI-generated problem sets",
-      "Adaptive AI practice on demand"
+      "Everything in Essential",
+      "AI-generated practice sets on demand",
+      "Best balance of value, flexibility, and depth"
     ]
   },
   {
     id: "hybrid_yearly",
     name: "Pro",
     cadence: "/ year",
-    staticCredits: "1,800 static problem sets",
-    aiCredits: "600 AI problem sets",
-    description: "Lower effective yearly rate for serious long-term learners.",
+    originalPriceBdt: 4499,
+    primaryAllowance: "1,800 curated practice sets",
+    secondaryAllowance: "480 AI-generated practice sets",
+    description: "For serious learners who want premium long-term access at the strongest yearly value.",
     badge: "Best Value",
     highlighted: false,
     features: [
-      "Everything in Hybrid Monthly",
-      "Annual billing discount",
-      "Large yearly quota for sustained study"
+      "Everything in Plus",
+      "Lower effective yearly pricing",
+      "Built for sustained preparation over the full year"
     ]
   }
 ];
@@ -96,9 +100,8 @@ export default async function PricingPage() {
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-semibold">Clear plans for static and AI practice.</h1>
           <p className="mx-auto max-w-2xl text-muted">
-            Every account starts on Free with 2 problem sets for life. Static plans include
-            more volume because they are cheaper to serve. Hybrid plans add AI-generated
-            practice on top.
+            Every account starts on Free with 2 problem sets for life. Choose a plan based on
+            how much guided practice and AI-powered support you want each month.
           </p>
         </div>
 
@@ -169,13 +172,19 @@ export default async function PricingPage() {
                 </div>
 
                 <div>
-                  <p className="text-3xl font-semibold">
-                    ৳{plan?.price_bdt ?? 0}{" "}
-                    <span className="text-base font-normal text-muted">{tier.cadence}</span>
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted line-through">
+                      ৳{tier.originalPriceBdt}
+                      <span className="ml-1">{tier.cadence}</span>
+                    </p>
+                    <p className="text-3xl font-semibold">
+                      ৳{plan?.price_bdt ?? 0}{" "}
+                      <span className="text-base font-normal text-muted">{tier.cadence}</span>
+                    </p>
+                  </div>
                   <div className="mt-3 space-y-1 text-sm text-zinc-300">
-                    <p>{tier.staticCredits}</p>
-                    <p>{tier.aiCredits}</p>
+                    <p>{tier.primaryAllowance}</p>
+                    <p>{tier.secondaryAllowance}</p>
                   </div>
                 </div>
 
