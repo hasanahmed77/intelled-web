@@ -41,6 +41,7 @@ function normalizeTopicKey(value: string) {
   return value
     .toLowerCase()
     .replace(/&/g, "and")
+    .replace(/\band\b/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .replace(/\s+/g, " ");
@@ -183,9 +184,11 @@ export function StaticPracticeForm({
         };
       });
 
-    const configuredTopicValues = new Set(
-      configuredTopics.map((entry) => normalizeTopicKey(entry.topic))
-    );
+    const configuredTopicValues = new Set<string>();
+    for (const entry of configuredTopics) {
+      configuredTopicValues.add(normalizeTopicKey(entry.topic));
+      configuredTopicValues.add(normalizeTopicKey(entry.label));
+    }
 
     const extraAvailableChoices: TopicChoice[] = [...availableTopicsByKey.entries()]
       .filter(([topicKey]) => !configuredTopicValues.has(topicKey))

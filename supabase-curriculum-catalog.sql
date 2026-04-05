@@ -102,7 +102,9 @@ values
   ('O Level', 'Physics', 'Waves', 'Waves', 3, true),
   ('O Level', 'Physics', 'Energy resources and energy transfers', 'Energy resources and energy transfers', 4, true),
   ('O Level', 'Physics', 'Solids, liquids and gases', 'Solids, liquids and gases', 5, true),
+  ('O Level', 'Physics', 'Solids, liquids, gases', 'Solids, liquids and gases', 5, true),
   ('O Level', 'Physics', 'Magnetism and electromagnetism', 'Magnetism and electromagnetism', 6, true),
+  ('O Level', 'Physics', 'Magnetism', 'Magnetism and electromagnetism', 6, true),
   ('O Level', 'Physics', 'Radioactivity and particles', 'Radioactivity and particles', 7, true),
   ('O Level', 'Physics', 'Astrophysics', 'Astrophysics', 8, true)
 on conflict (education_type, subject, topic) do update
