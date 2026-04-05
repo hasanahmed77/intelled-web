@@ -65,10 +65,12 @@ export default async function ProfilePage({
     plans.find((p) => p.id === currentPlanId) ?? plans.find((p) => p.id === "free") ?? null;
   const worksheetLimit: number | null =
     currentPlanId === "free"
-      ? (currentPlan?.lifetime_worksheet_limit ?? 2)
+      ? ((currentPlan?.free_static_problem_sets_lifetime_limit ?? 5) +
+          (currentPlan?.free_ai_problem_sets_lifetime_limit ?? 2))
       : ((currentPlan?.static_problem_sets_per_period ?? 0) +
           (currentPlan?.ai_problem_sets_per_period ?? 0));
-  const freeUsed = billing.usage?.free_worksheets_used_lifetime ?? 0;
+  const freeUsed = billing.usage?.free_static_problem_sets_used_lifetime ?? 0;
+  const freeAiUsed = billing.usage?.free_ai_problem_sets_used_lifetime ?? 0;
   const staticUsed = billing.usage?.period_static_problem_sets_used ?? 0;
   const aiUsed = billing.usage?.period_ai_problem_sets_used ?? 0;
   const staticLimit =
@@ -143,11 +145,13 @@ export default async function ProfilePage({
       periodEnd={billing.subscription?.period_end ?? null}
       autoRenew={billing.subscription?.auto_renew ?? false}
       freeUsed={freeUsed}
-      freeLimit={currentPlan?.lifetime_worksheet_limit ?? 2}
+      freeLimit={currentPlan?.free_static_problem_sets_lifetime_limit ?? 5}
       staticUsed={staticUsed}
       staticLimit={staticLimit}
-      aiUsed={aiUsed}
-      aiLimit={aiLimit}
+      aiUsed={currentPlanId === "free" ? freeAiUsed : aiUsed}
+      aiLimit={currentPlanId === "free"
+        ? (currentPlan?.free_ai_problem_sets_lifetime_limit ?? 2)
+        : aiLimit}
       cancelAtPeriodEnd={billing.subscription?.cancel_at_period_end ?? false}
       cancelAction={cancelSubscriptionAction}
     />

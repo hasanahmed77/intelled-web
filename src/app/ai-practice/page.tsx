@@ -24,12 +24,14 @@ export default async function AiPracticePage() {
 
   if (
     billing.subscription.plan_id === "free" &&
-    currentPlan?.lifetime_worksheet_limit !== null &&
-    currentPlan?.lifetime_worksheet_limit !== undefined &&
-    billing.usage.free_worksheets_used_lifetime >= currentPlan.lifetime_worksheet_limit
+    currentPlan?.free_ai_problem_sets_lifetime_limit !== null &&
+    currentPlan?.free_ai_problem_sets_lifetime_limit !== undefined &&
+    billing.usage.free_ai_problem_sets_used_lifetime >=
+      currentPlan.free_ai_problem_sets_lifetime_limit
   ) {
     generationDisabled = true;
-    generationDisabledMessage = "Free plan lifetime limit reached. Upgrade to become a legend.";
+    generationDisabledMessage =
+      "Your free AI practice limit has been reached. Upgrade to continue.";
   } else if (
     billing.subscription.plan_id !== "free" &&
     currentPlan?.ai_problem_sets_per_period !== null &&

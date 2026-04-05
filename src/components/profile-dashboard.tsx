@@ -527,7 +527,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
             </div>
             <div>
               <p className="text-xs text-muted">
-                {props.planId === "free" ? "Free lifetime used" : "Static sets used"}
+                {props.planId === "free" ? "Free curated used" : "Static sets used"}
               </p>
               <p className="mt-2 text-base font-medium">
                 {props.planId === "free" ? props.freeUsed : props.staticUsed}
@@ -539,8 +539,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
               </p>
             </div>
           </div>
-          {props.planId !== "free" ? (
-            <div className="grid gap-6 border-t border-ink-800 pt-5 md:grid-cols-2">
+          <div className="grid gap-6 border-t border-ink-800 pt-5 md:grid-cols-2">
               <div>
                 <p className="text-xs text-muted">AI sets used</p>
                 <p className="mt-2 text-base font-medium">
@@ -548,14 +547,22 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
                   {props.aiLimit !== null ? ` / ${props.aiLimit}` : ""}
                 </p>
               </div>
+              {props.planId !== "free" ? (
               <div>
                 <p className="text-xs text-muted">Plan mix</p>
                 <p className="mt-2 text-base font-medium">
                   {props.staticLimit ?? 0} static / {props.aiLimit ?? 0} AI
                 </p>
               </div>
+              ) : (
+              <div>
+                <p className="text-xs text-muted">Free allowance</p>
+                <p className="mt-2 text-base font-medium">
+                  {props.freeLimit} curated / {props.aiLimit ?? 0} AI
+                </p>
+              </div>
+              )}
             </div>
-          ) : null}
           {props.planId !== "free" && (
             <div className="flex flex-col gap-4 border-t border-ink-800 pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <p className="text-sm text-muted">
@@ -582,7 +589,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
             <div>
               <p className="font-semibold">Upgrade your plan</p>
               <p className="mt-1 text-sm text-muted">
-                Unlock larger static quotas and separate AI practice access.
+                Unlock larger curated practice quotas and more AI practice access.
               </p>
             </div>
             <Link href="/pricing" className="button button-primary">

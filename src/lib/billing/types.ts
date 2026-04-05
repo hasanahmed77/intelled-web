@@ -10,6 +10,8 @@ export type BillingPlan = {
   interval: "free" | "monthly" | "yearly";
   price_bdt: number;
   duration_days: number;
+  free_static_problem_sets_lifetime_limit: number | null;
+  free_ai_problem_sets_lifetime_limit: number | null;
   static_problem_sets_per_period: number | null;
   ai_problem_sets_per_period: number | null;
   lifetime_worksheet_limit: number | null;
@@ -30,6 +32,8 @@ export type UserSubscription = {
 export type UsageCounter = {
   user_id: string;
   free_worksheets_used_lifetime: number;
+  free_static_problem_sets_used_lifetime: number;
+  free_ai_problem_sets_used_lifetime: number;
   period_static_problem_sets_used: number;
   period_ai_problem_sets_used: number;
   period_anchor: string | null;
