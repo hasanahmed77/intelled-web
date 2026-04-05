@@ -15,6 +15,10 @@ export type UserNotification = {
   created_at: string;
 };
 
+export type UserNotificationCounter = {
+  unread_count: number;
+};
+
 const MAX_NOTIFICATIONS = 5;
 
 function getLevelName(level: number) {
@@ -211,6 +215,7 @@ export async function listUserNotifications(userId: string): Promise<UserNotific
   const { data, error } = await supabase
     .from("user_notifications")
     .select("id, type, title, body, metadata, read_at, created_at")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(MAX_NOTIFICATIONS);
 
@@ -219,6 +224,23 @@ export async function listUserNotifications(userId: string): Promise<UserNotific
   }
 
   return (data ?? []) as UserNotification[];
+}
+
+export async function fetchUnreadNotificationCount(userId: string): Promise<number> {
+  await ensureStreakLossNotification(userId);
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("user_notification_counters")
+    .select("unread_count")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data?.unread_count ?? 0;
 }
 
 export async function markAllNotificationsRead(userId: string) {

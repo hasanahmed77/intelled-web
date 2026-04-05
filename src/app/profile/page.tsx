@@ -1,10 +1,9 @@
 import { requireUser } from "@/lib/auth";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
-import { fetchProfile } from "@/lib/profile/data";
-import { fetchAttempts, fetchWorksheets } from "@/lib/worksheet/data";
+import { fetchProfile, fetchUserLearningStats } from "@/lib/profile/data";
+import { fetchWorksheets } from "@/lib/worksheet/data";
 import { fetchUserBadges, fetchCurrentChallengeProgress } from "@/lib/gamification/data";
 import { getLevelInfo, getCurrentWeekChallenge, BADGE_DEFINITIONS } from "@/lib/gamification/types";
-import { calculateStreakStats } from "@/lib/streaks";
 import { ProfileDashboard } from "@/components/profile-dashboard";
 import type { BadgeItem, WorksheetItem } from "@/components/profile-dashboard";
 import type { BillingPlanId } from "@/lib/billing/types";
@@ -32,13 +31,13 @@ export default async function ProfilePage({
   const user = await requireUser("/profile");
   const fallbackName = (user.email ?? "user").split("@")[0];
 
-  const [attempts, { data: worksheetData, total: totalWorksheets }, billing, plans, profile, userBadges, challengeProgress] =
+  const [{ data: worksheetData, total: totalWorksheets }, billing, plans, profile, learningStats, userBadges, challengeProgress] =
     await Promise.all([
-      fetchAttempts(user.id),
       fetchWorksheets(user.id, PAGE_SIZE, 0),
       getCurrentSubscription(user.id),
       listActivePlans(),
       fetchProfile(user.id),
+      fetchUserLearningStats(user.id),
       fetchUserBadges(user.id),
       fetchCurrentChallengeProgress(user.id),
     ]);
@@ -48,15 +47,8 @@ export default async function ProfilePage({
     ? `Focused on ${profile.primary_learning_goal}.`
     : "Track your learning progress and achievements.";
 
-  const average =
-    attempts.length > 0
-      ? Math.round(attempts.reduce((s, a) => s + (a.score ?? 0), 0) / attempts.length)
-      : 0;
-  const streakStats = calculateStreakStats(attempts);
-
-  const completedIds = new Set(
-    attempts.map((a) => a.worksheet_id).filter((id): id is string => Boolean(id))
-  );
+  const average = Math.round(Number(learningStats?.avg_score ?? 0));
+  const attemptCount = learningStats?.attempt_count ?? 0;
 
   // Billing
   const currentPlanId = (billing.subscription?.plan_id ?? "free") as BillingPlanId;
@@ -105,11 +97,8 @@ export default async function ProfilePage({
     difficulty: w.difficulty,
     source: ((w.source as string | null) ?? "ai") as "ai" | "static",
     created_at: w.created_at,
-    done: completedIds.has(w.id),
+    done: w.done ?? false,
   }));
-
-  // IDs of all completed worksheets — needed client-side to mark loaded pages
-  const completedWorksheetIds = [...completedIds];
 
   return (
     <ProfileDashboard
@@ -118,9 +107,9 @@ export default async function ProfilePage({
       goalText={goalText}
       average={average}
       worksheetCount={visibleWorksheetCount}
-      attemptCount={attempts.length}
-      currentStreak={streakStats.currentStreak}
-      longestStreak={streakStats.longestStreak}
+      attemptCount={attemptCount}
+      currentStreak={profile?.current_streak ?? 0}
+      longestStreak={profile?.longest_streak ?? 0}
       totalXp={totalXp}
       levelNumber={lvl.level}
       levelName={lvl.name}
@@ -137,7 +126,6 @@ export default async function ProfilePage({
       worksheets={worksheetItems}
       totalWorksheets={totalWorksheets}
       worksheetLimit={worksheetLimit}
-      completedWorksheetIds={completedWorksheetIds}
       planId={currentPlanId}
       planName={PLAN_DISPLAY_NAME[currentPlanId]}
       planStatus={billing.subscription?.status ?? "active"}

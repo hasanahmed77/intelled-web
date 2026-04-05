@@ -130,12 +130,10 @@ function ProblemSetsTab({
   initialWorksheets,
   totalWorksheets,
   worksheetLimit,
-  completedIds,
 }: {
   initialWorksheets: WorksheetItem[];
   totalWorksheets: number;
   worksheetLimit: number | null;
-  completedIds: Set<string>;
 }) {
   const [worksheets, setWorksheets] = useState(initialWorksheets);
   const [page, setPage] = useState(1);
@@ -176,10 +174,9 @@ function ProblemSetsTab({
     startTransition(async () => {
       const next = await fetchWorksheetPageAction(offset, remaining);
       setWorksheets((prev) => {
-        const nextItems = next.map((w) => ({ ...w, done: completedIds.has(w.id) }));
         const existingIds = new Set(prev.map((item) => item.id));
         const merged = [...prev];
-        for (const item of nextItems) {
+        for (const item of next) {
           if (!existingIds.has(item.id)) {
             merged.push(item);
           }
@@ -188,7 +185,7 @@ function ProblemSetsTab({
       });
       setPage(nextPage);
     });
-  }, [completedIds, effectiveMax, isPending, loadedPages, pageSize, totalPages]);
+  }, [effectiveMax, isPending, loadedPages, pageSize, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -316,7 +313,6 @@ export type ProfileDashboardProps = {
   worksheets: WorksheetItem[];
   totalWorksheets: number;
   worksheetLimit: number | null;
-  completedWorksheetIds: string[];
   // Subscription
   planId: string;
   planName: string;
@@ -505,13 +501,11 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
       </div>
     );
   } else if (tab === "sets") {
-    const completedSet = new Set(props.completedWorksheetIds);
     content = (
       <ProblemSetsTab
         initialWorksheets={props.worksheets}
         totalWorksheets={props.totalWorksheets}
         worksheetLimit={props.worksheetLimit}
-        completedIds={completedSet}
       />
     );
   } else {
@@ -534,7 +528,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
               <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium">
                 {props.periodEnd ? new Date(props.periodEnd).toLocaleDateString() : "N/A"}
                 {remainingDaysLabel ? (
-                  <span className="text-xs font-normal text-muted">{remainingDaysLabel}</span>
+                  <span className="text-xs font-normal italic text-muted">({remainingDaysLabel})</span>
                 ) : null}
               </p>
             </div>

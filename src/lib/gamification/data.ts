@@ -1,8 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { calculateStreakStats } from "@/lib/streaks";
+import { createSupabasePublicServerClient } from "@/lib/supabase/public-server";
 
 export interface LeaderboardEntry {
   rank: number;
@@ -14,59 +13,25 @@ export interface LeaderboardEntry {
 }
 
 const getCachedLeaderboard = unstable_cache(async (): Promise<LeaderboardEntry[]> => {
-  const supabase = createSupabaseAdminClient();
-  const { data: profiles, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, full_name, level");
-  if (profileError) throw new Error(profileError.message);
+  const supabase = createSupabasePublicServerClient();
+  const { data, error } = await supabase
+    .from("leaderboard_stats")
+    .select("display_name, attempt_count, avg_score, current_streak, level")
+    .order("attempt_count", { ascending: false })
+    .order("avg_score", { ascending: false })
+    .order("last_attempt_at", { ascending: true })
+    .limit(10);
 
-  const { data: users, error: userError } = await supabase.auth.admin.listUsers();
-  if (userError) throw new Error(userError.message);
+  if (error) throw new Error(error.message);
 
-  const { data: attempts, error: attemptError } = await supabase
-    .from("worksheet_attempts")
-    .select("user_id, score, created_at");
-  if (attemptError) throw new Error(attemptError.message);
-
-  const emailByUserId = new Map(users.users.map((user) => [user.id, user.email ?? "user"]));
-  const attemptsByUserId = new Map<string, Array<{ score: number; created_at: string | null }>>();
-
-  for (const attempt of attempts ?? []) {
-    const existing = attemptsByUserId.get(attempt.user_id) ?? [];
-    existing.push({ score: attempt.score, created_at: attempt.created_at });
-    attemptsByUserId.set(attempt.user_id, existing);
-  }
-
-  return (profiles ?? [])
-    .map((profile) => {
-      const userAttempts = attemptsByUserId.get(profile.id) ?? [];
-      const avgScore =
-        userAttempts.length > 0
-          ? Number(
-              (userAttempts.reduce((sum, attempt) => sum + attempt.score, 0) / userAttempts.length)
-                .toFixed(1)
-            )
-          : 0;
-      const streakStats = calculateStreakStats(userAttempts);
-      const fallbackName = emailByUserId.get(profile.id)?.split("@")[0] ?? "user";
-
-      return {
-        display_name: profile.full_name?.trim() || fallbackName,
-        attempt_count: userAttempts.length,
-        avg_score: avgScore,
-        current_streak: streakStats.currentStreak,
-        level: profile.level ?? 1,
-      };
-    })
-    .sort((a, b) => {
-      if (b.attempt_count !== a.attempt_count) return b.attempt_count - a.attempt_count;
-      return b.avg_score - a.avg_score;
-    })
-    .slice(0, 10)
-    .map((entry, index) => ({
-      rank: index + 1,
-      ...entry,
-    }));
+  return (data ?? []).map((entry, index) => ({
+    rank: index + 1,
+    display_name: entry.display_name,
+    attempt_count: entry.attempt_count ?? 0,
+    avg_score: Number(entry.avg_score ?? 0),
+    current_streak: entry.current_streak ?? 0,
+    level: entry.level ?? 1
+  }));
 }, ["leaderboard"], { revalidate: 300, tags: ["leaderboard"] });
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {

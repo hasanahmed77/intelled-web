@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { consumeWorksheetCredit, refundWorksheetCredit } from "@/lib/billing/data";
@@ -324,6 +325,8 @@ export async function submitAttemptAction(payload: {
     beforeBadgeIds: beforeBadges.map((badge) => badge.badge_id),
     afterBadgeIds: afterBadges.map((badge) => badge.badge_id)
   });
+
+  revalidateTag("leaderboard", "max");
 
   return { ok: true, score: result.score, details: graded };
 }

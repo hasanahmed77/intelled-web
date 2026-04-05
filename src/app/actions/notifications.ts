@@ -2,6 +2,7 @@
 
 import { requireUser } from "@/lib/auth";
 import {
+  fetchUnreadNotificationCount,
   listUserNotifications,
   markAllNotificationsRead
 } from "@/lib/notifications/data";
@@ -9,6 +10,11 @@ import {
 export async function listNotificationsAction() {
   const user = await requireUser();
   return listUserNotifications(user.id);
+}
+
+export async function unreadNotificationCountAction() {
+  const user = await requireUser();
+  return fetchUnreadNotificationCount(user.id);
 }
 
 export async function markNotificationsReadAction() {

@@ -4,7 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { MouseEvent, useEffect, useMemo, useState, useTransition } from "react";
-import { listNotificationsAction, markNotificationsReadAction } from "@/app/actions/notifications";
+import {
+  listNotificationsAction,
+  markNotificationsReadAction,
+  unreadNotificationCountAction
+} from "@/app/actions/notifications";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { UserNotification } from "@/lib/notifications/data";
 import { calculateStreakStats } from "@/lib/streaks";
@@ -51,13 +55,14 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
   const [userEmail, setUserEmail] = useState("");
   const [currentStreak, setCurrentStreak] = useState(0);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const username = userEmail.split("@")[0] ?? "";
   const initial = username.charAt(0).toUpperCase();
-  const unreadCount = useMemo(
+  const unreadCountFromList = useMemo(
     () => notifications.filter((notification) => !notification.read_at).length,
     [notifications]
   );
@@ -71,11 +76,21 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
     }
   };
 
+  const loadUnreadCount = async () => {
+    try {
+      const nextCount = await unreadNotificationCountAction();
+      setUnreadCount(nextCount);
+    } catch {
+      // ignore transient failures in navbar
+    }
+  };
+
   const markNotificationsRead = async () => {
     if (unreadCount === 0) {
       return;
     }
 
+    setUnreadCount(0);
     setNotifications((current) =>
       current.map((notification) => ({
         ...notification,
@@ -117,7 +132,7 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
       setLoading(false);
       // Fetch streak in the background after unblocking the UI
       if (user) {
-        loadNotifications();
+        loadUnreadCount();
         const cachedRaw = window.localStorage.getItem(STREAK_CACHE_KEY);
         if (cachedRaw) {
           try {
@@ -150,10 +165,11 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
       setUserEmail(session?.user?.email ?? "");
       if (session?.user) {
         fetchStreak(session.user.id);
-        loadNotifications();
+        loadUnreadCount();
       } else {
         setCurrentStreak(0);
         setNotifications([]);
+        setUnreadCount(0);
         window.localStorage.removeItem(STREAK_CACHE_KEY);
       }
     });
@@ -163,7 +179,7 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
       supabase.auth.getSession().then(({ data }) => {
         if (data.session?.user) {
           fetchStreak(data.session.user.id);
-          loadNotifications();
+          loadUnreadCount();
         }
       });
     };
@@ -210,7 +226,10 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
 
   useEffect(() => {
     if (notificationsOpen) {
-      markNotificationsRead();
+      void (async () => {
+        await loadNotifications();
+        await markNotificationsRead();
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notificationsOpen]);
@@ -354,7 +373,7 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
                           <span aria-hidden="true">×</span>
                         </button>
                       </div>
-                      {notifications.length === 0 ? (
+                      {notifications.length === 0 && unreadCountFromList === 0 ? (
                         <div className="rounded-xl border border-ink-700 bg-ink-900/60 p-4 text-sm text-muted">
                           No notifications yet.
                         </div>
@@ -534,7 +553,7 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
                     <span aria-hidden="true">×</span>
                   </button>
                 </div>
-                {notifications.length === 0 ? (
+                {notifications.length === 0 && unreadCountFromList === 0 ? (
                   <div className="rounded-xl border border-ink-700 bg-ink-900/60 p-4 text-sm text-muted">
                     No notifications yet.
                   </div>
