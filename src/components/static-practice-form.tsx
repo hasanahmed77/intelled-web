@@ -37,6 +37,15 @@ function formatTopicLabel(label: string) {
   return label.replace(/^\d+\s*:\s*/, "").replace(/\s+\d+$/, "");
 }
 
+function normalizeTopicKey(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 type TopicChoice = {
   label: string;
   value: string;
@@ -124,13 +133,19 @@ export function StaticPracticeForm({
   const topicOptions = useMemo<TopicChoice[]>(() => {
     if (!educationType || !subject) return [];
 
-    const availableTopics = new Set(
-      options
+    const availableTopicNames = options
         .filter(
           (option) => option.educationType === educationType && option.subject === subject
         )
-        .map((option) => option.topic)
-    );
+        .map((option) => option.topic);
+    const availableTopicsByKey = new Map<string, string>();
+    for (const topicName of availableTopicNames) {
+      const key = normalizeTopicKey(topicName);
+      if (!availableTopicsByKey.has(key)) {
+        availableTopicsByKey.set(key, topicName);
+      }
+    }
+
     const configuredTopics = topicCatalog
       .filter((entry) => entry.educationType === educationType && entry.subject === subject)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label));
@@ -157,7 +172,10 @@ export function StaticPracticeForm({
     const configuredChoices = [...groupedTopics.values()]
       .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label))
       .map((group) => {
-        const matchedTopic = group.aliases.find((topicName) => availableTopics.has(topicName));
+        const matchedTopic =
+          group.aliases
+            .map((topicName) => availableTopicsByKey.get(normalizeTopicKey(topicName)))
+            .find(Boolean) ?? null;
         return {
           label: group.label,
           value: matchedTopic ?? group.aliases[0],
@@ -166,11 +184,12 @@ export function StaticPracticeForm({
       });
 
     const configuredTopicValues = new Set(
-      configuredTopics.map((entry) => entry.topic)
+      configuredTopics.map((entry) => normalizeTopicKey(entry.topic))
     );
 
-    const extraAvailableChoices: TopicChoice[] = [...availableTopics]
-      .filter((topicName) => !configuredTopicValues.has(topicName))
+    const extraAvailableChoices: TopicChoice[] = [...availableTopicsByKey.entries()]
+      .filter(([topicKey]) => !configuredTopicValues.has(topicKey))
+      .map(([, topicName]) => topicName)
       .sort((a, b) => a.localeCompare(b))
       .map((topicName) => ({
         label: formatTopicLabel(topicName),
