@@ -108,7 +108,7 @@ export default async function PricingPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="card p-6">
             <p className="text-sm text-muted">Current plan</p>
             <p className="mt-3 text-2xl font-semibold uppercase">
@@ -117,7 +117,7 @@ export default async function PricingPage() {
           </div>
           <div className="card p-6">
             <p className="text-sm text-muted">
-              {currentPlanId === "free" ? "Free curated used" : "Static sets used"}
+              {currentPlanId === "free" ? "Curated sets used" : "Static sets used"}
             </p>
             <p className="mt-3 text-2xl font-semibold">
               {currentPlanId === "free" ? freeStaticUsed : staticUsed}
@@ -137,12 +137,6 @@ export default async function PricingPage() {
                 : aiLimit !== null
                 ? ` / ${aiLimit}`
                 : ""}
-            </p>
-          </div>
-          <div className="card p-6">
-            <p className="text-sm text-muted">Recurring mode</p>
-            <p className="mt-3 text-2xl font-semibold">
-              {billing.subscription?.auto_renew ? "ON" : "OFF"}
             </p>
           </div>
         </div>

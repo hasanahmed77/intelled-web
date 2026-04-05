@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { MouseEvent, useEffect, useState, useTransition } from "react";
+import { MouseEvent, useEffect, useMemo, useState, useTransition } from "react";
+import { listNotificationsAction, markNotificationsReadAction } from "@/app/actions/notifications";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { UserNotification } from "@/lib/notifications/data";
 import { calculateStreakStats } from "@/lib/streaks";
 import { AuthButton } from "@/components/auth-button";
 
@@ -48,11 +50,45 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
   const [isAuthed, setIsAuthed] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const username = userEmail.split("@")[0] ?? "";
   const initial = username.charAt(0).toUpperCase();
+  const unreadCount = useMemo(
+    () => notifications.filter((notification) => !notification.read_at).length,
+    [notifications]
+  );
+
+  const loadNotifications = async () => {
+    try {
+      const nextNotifications = await listNotificationsAction();
+      setNotifications(nextNotifications);
+    } catch {
+      // ignore transient notification loading failures in the navbar
+    }
+  };
+
+  const markNotificationsRead = async () => {
+    if (unreadCount === 0) {
+      return;
+    }
+
+    setNotifications((current) =>
+      current.map((notification) => ({
+        ...notification,
+        read_at: notification.read_at ?? new Date().toISOString()
+      }))
+    );
+
+    try {
+      await markNotificationsReadAction();
+    } catch {
+      // ignore; next fetch will reconcile
+    }
+  };
 
   const fetchStreak = async (userId: string) => {
     const supabase = createSupabaseBrowserClient();
@@ -81,6 +117,7 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
       setLoading(false);
       // Fetch streak in the background after unblocking the UI
       if (user) {
+        loadNotifications();
         const cachedRaw = window.localStorage.getItem(STREAK_CACHE_KEY);
         if (cachedRaw) {
           try {
@@ -113,8 +150,10 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
       setUserEmail(session?.user?.email ?? "");
       if (session?.user) {
         fetchStreak(session.user.id);
+        loadNotifications();
       } else {
         setCurrentStreak(0);
+        setNotifications([]);
         window.localStorage.removeItem(STREAK_CACHE_KEY);
       }
     });
@@ -122,7 +161,10 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
     // Re-fetch streak after worksheet submission
     const handleStreakChanged = () => {
       supabase.auth.getSession().then(({ data }) => {
-        if (data.session?.user) fetchStreak(data.session.user.id);
+        if (data.session?.user) {
+          fetchStreak(data.session.user.id);
+          loadNotifications();
+        }
       });
     };
     window.addEventListener("streak-changed", handleStreakChanged);
@@ -165,6 +207,26 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
   const profileActive = pathname === "/profile";
   const leaderboardActive = pathname === "/leaderboard";
   const adminActive = pathname === "/admin/payments" || pathname.startsWith("/admin/");
+
+  useEffect(() => {
+    if (notificationsOpen) {
+      markNotificationsRead();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notificationsOpen]);
+
+  const formatNotificationTime = (value: string) => {
+    const date = new Date(value);
+    const deltaMs = Date.now() - date.getTime();
+    const minutes = Math.max(Math.floor(deltaMs / 60000), 0);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
@@ -257,6 +319,78 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
           ) : (
             <div className="flex items-center gap-3">
               {isAuthed ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotificationsOpen((current) => !current);
+                      setMenuOpen(false);
+                    }}
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm transition hover:border-accent hover:text-accent ${
+                      unreadCount > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-300"
+                    } ${
+                      notificationsOpen ? "border-accent text-accent" : ""
+                    }`}
+                    aria-label="Open notifications"
+                  >
+                    <span aria-hidden="true">🔔</span>
+                    {unreadCount > 0 ? (
+                      <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-black">
+                        {unreadCount}
+                      </span>
+                    ) : null}
+                  </button>
+
+                  {notificationsOpen ? (
+                    <div className="absolute right-0 top-full z-30 mt-2 w-[22rem] rounded-2xl border border-ink-700 bg-ink-950/95 p-3 shadow-glow">
+                      <div className="mb-2 flex items-center justify-between px-1">
+                        <p className="text-sm font-semibold text-zinc-100">Notifications</p>
+                        <button
+                          type="button"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-ink-700 text-sm text-muted transition hover:border-accent hover:text-accent"
+                          onClick={() => setNotificationsOpen(false)}
+                          aria-label="Close notifications"
+                        >
+                          <span aria-hidden="true">×</span>
+                        </button>
+                      </div>
+                      {notifications.length === 0 ? (
+                        <div className="rounded-xl border border-ink-700 bg-ink-900/60 p-4 text-sm text-muted">
+                          No notifications yet.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {notifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              className={`rounded-xl border p-3 ${
+                                notification.read_at
+                                  ? "border-ink-700 bg-ink-900/55"
+                                  : "border-accent/40 bg-accent/10"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-medium text-zinc-100">
+                                    {notification.title}
+                                  </p>
+                                  <p className="mt-1 text-xs leading-5 text-zinc-300">
+                                    {notification.body}
+                                  </p>
+                                </div>
+                                <span className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-muted">
+                                  {formatNotificationTime(notification.created_at)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {isAuthed ? (
                 <div className="group relative">
                   <Link
                     href="/profile"
@@ -342,27 +476,98 @@ export function NavbarClient({ isAdmin = false }: { isAdmin?: boolean }) {
             ) : (
               <div className="mt-2 flex items-center gap-3" onClick={() => setMenuOpen(false)}>
                 {isAuthed ? (
-                  <div className="relative">
-                    <Link
-                      href="/profile"
-                      prefetch
-                      onClick={handleNavClick("/profile", () => setMenuOpen(false))}
-                      className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
-                        currentStreak > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-400"
-                      } ${profileActive ? "border-accent text-accent" : ""}`}
-                      aria-label="Open profile"
-                    >
-                      {initial || "U"}
-                      {currentStreak === 0 ? <CrackOverlay /> : null}
-                    </Link>
-                    <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-black">
-                      {currentStreak}
-                    </span>
-                  </div>
+                  <>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setNotificationsOpen((current) => !current);
+                        }}
+                        className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm transition hover:border-accent hover:text-accent ${
+                          unreadCount > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-300"
+                        } ${
+                          notificationsOpen ? "border-accent text-accent" : ""
+                        }`}
+                        aria-label="Open notifications"
+                      >
+                        <span aria-hidden="true">🔔</span>
+                        {unreadCount > 0 ? (
+                          <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-black">
+                            {unreadCount}
+                          </span>
+                        ) : null}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Link
+                        href="/profile"
+                        prefetch
+                        onClick={handleNavClick("/profile", () => setMenuOpen(false))}
+                        className={`relative flex h-9 w-9 items-center justify-center rounded-full border bg-ink-900/70 text-sm font-semibold transition hover:border-accent hover:text-accent ${
+                          currentStreak > 0 ? "profile-fire-aura" : "border-zinc-600 text-zinc-400"
+                        } ${profileActive ? "border-accent text-accent" : ""}`}
+                        aria-label="Open profile"
+                      >
+                        {initial || "U"}
+                        {currentStreak === 0 ? <CrackOverlay /> : null}
+                      </Link>
+                      <span className="pointer-events-none absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-black">
+                        {currentStreak}
+                      </span>
+                    </div>
+                  </>
                 ) : null}
                 <AuthButton isAuthed={isAuthed} />
               </div>
             )}
+            {isAuthed && notificationsOpen ? (
+              <div className="mt-3 rounded-2xl border border-ink-700 bg-ink-950/95 p-3 shadow-glow">
+                <div className="mb-2 flex items-center justify-between px-1">
+                  <p className="text-sm font-semibold text-zinc-100">Notifications</p>
+                  <button
+                    type="button"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-ink-700 text-sm text-muted transition hover:border-accent hover:text-accent"
+                    onClick={() => setNotificationsOpen(false)}
+                    aria-label="Close notifications"
+                  >
+                    <span aria-hidden="true">×</span>
+                  </button>
+                </div>
+                {notifications.length === 0 ? (
+                  <div className="rounded-xl border border-ink-700 bg-ink-900/60 p-4 text-sm text-muted">
+                    No notifications yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`rounded-xl border p-3 ${
+                          notification.read_at
+                            ? "border-ink-700 bg-ink-900/55"
+                            : "border-accent/40 bg-accent/10"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium text-zinc-100">
+                              {notification.title}
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-zinc-300">
+                              {notification.body}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-muted">
+                            {formatNotificationTime(notification.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </nav>
         </div>
       ) : null}

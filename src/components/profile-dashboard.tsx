@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatedName } from "@/components/animated-name";
-import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { ProfileSidebar } from "@/components/profile-sidebar";
 import type { ProfileTab } from "@/components/profile-sidebar";
 import { fetchWorksheetPageAction } from "@/app/actions/profile";
@@ -42,6 +41,23 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
       <p className="mt-3 text-2xl font-semibold sm:text-3xl">{value}</p>
     </div>
   );
+}
+
+function getRemainingDaysLabel(periodEnd: string | null) {
+  if (!periodEnd) {
+    return null;
+  }
+
+  const now = new Date();
+  const end = new Date(periodEnd);
+  const diffMs = end.getTime() - now.getTime();
+  const daysRemaining = Math.max(Math.ceil(diffMs / (1000 * 60 * 60 * 24)), 0);
+
+  if (daysRemaining === 0) {
+    return "ends today";
+  }
+
+  return `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left`;
 }
 
 const CIRCLE_R = 40;
@@ -306,15 +322,12 @@ export type ProfileDashboardProps = {
   planName: string;
   planStatus: string;
   periodEnd: string | null;
-  autoRenew: boolean;
   freeUsed: number;
   freeLimit: number;
   staticUsed: number;
   staticLimit: number | null;
   aiUsed: number;
   aiLimit: number | null;
-  cancelAtPeriodEnd: boolean;
-  cancelAction: () => Promise<void>;
 };
 
 export function ProfileDashboard(props: ProfileDashboardProps) {
@@ -322,6 +335,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
   const [tab, setTab] = useState<ProfileTab>(
     (props.initialTab as ProfileTab) ?? "overview"
   );
+  const remainingDaysLabel = getRemainingDaysLabel(props.periodEnd);
 
   const switchTab = useCallback(
     (next: ProfileTab) => {
@@ -514,20 +528,19 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
               {props.planStatus.toUpperCase()}
             </span>
           </div>
-          <div className="grid gap-6 border-t border-ink-800 pt-5 md:grid-cols-3">
+          <div className="grid gap-6 border-t border-ink-800 pt-5 md:grid-cols-2">
             <div>
               <p className="text-xs text-muted">Period ends</p>
-              <p className="mt-2 text-base font-medium">
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium">
                 {props.periodEnd ? new Date(props.periodEnd).toLocaleDateString() : "N/A"}
+                {remainingDaysLabel ? (
+                  <span className="text-xs font-normal text-muted">{remainingDaysLabel}</span>
+                ) : null}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted">Auto renew</p>
-              <p className="mt-2 text-base font-medium">{props.autoRenew ? "ENABLED" : "DISABLED"}</p>
-            </div>
-            <div>
               <p className="text-xs text-muted">
-                {props.planId === "free" ? "Free curated used" : "Static sets used"}
+                {props.planId === "free" ? "Curated sets used" : "Static sets used"}
               </p>
               <p className="mt-2 text-base font-medium">
                 {props.planId === "free" ? props.freeUsed : props.staticUsed}
@@ -563,26 +576,6 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
               </div>
               )}
             </div>
-          {props.planId !== "free" && (
-            <div className="flex flex-col gap-4 border-t border-ink-800 pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <p className="text-sm text-muted">
-                Cancellation takes effect at the end of the current billing period.
-              </p>
-              {props.cancelAtPeriodEnd ? (
-                <span className="rounded-full border border-amber-500/40 px-3 py-1 text-xs uppercase tracking-widest text-amber-300">
-                  Cancel scheduled
-                </span>
-              ) : (
-                <ConfirmActionForm
-                  action={props.cancelAction}
-                  title="Cancel subscription?"
-                  message="Your subscription will stay active until the current billing period ends, and auto-renew will be turned off."
-                  buttonLabel="Cancel subscription"
-                  className="button border-red-500/50 text-red-300 hover:border-red-400 hover:text-red-200"
-                />
-              )}
-            </div>
-          )}
         </div>
         {props.planId === "free" && (
           <div className="card flex flex-col gap-4 p-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-6">

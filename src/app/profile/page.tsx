@@ -1,4 +1,3 @@
-import { cancelSubscriptionAction } from "@/app/actions/billing";
 import { requireUser } from "@/lib/auth";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
 import { fetchProfile } from "@/lib/profile/data";
@@ -143,7 +142,6 @@ export default async function ProfilePage({
       planName={PLAN_DISPLAY_NAME[currentPlanId]}
       planStatus={billing.subscription?.status ?? "active"}
       periodEnd={billing.subscription?.period_end ?? null}
-      autoRenew={billing.subscription?.auto_renew ?? false}
       freeUsed={freeUsed}
       freeLimit={currentPlan?.free_static_problem_sets_lifetime_limit ?? 5}
       staticUsed={staticUsed}
@@ -152,8 +150,6 @@ export default async function ProfilePage({
       aiLimit={currentPlanId === "free"
         ? (currentPlan?.free_ai_problem_sets_lifetime_limit ?? 2)
         : aiLimit}
-      cancelAtPeriodEnd={billing.subscription?.cancel_at_period_end ?? false}
-      cancelAction={cancelSubscriptionAction}
     />
   );
 }

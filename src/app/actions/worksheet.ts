@@ -3,6 +3,9 @@
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { consumeWorksheetCredit, refundWorksheetCredit } from "@/lib/billing/data";
+import { fetchUserBadges } from "@/lib/gamification/data";
+import { createNotificationsForAttempt } from "@/lib/notifications/data";
+import { fetchProfile } from "@/lib/profile/data";
 import { assertRateLimit } from "@/lib/security/rate-limit";
 import {
   getMaxTotalAnswerCharacters,
@@ -14,6 +17,7 @@ import {
   createStaticWorksheetFromBank,
   createAttempt,
   fetchAttemptByWorksheet,
+  fetchAttempts,
   fetchWorksheetAnswerKey,
   fetchWorksheetWithQuestions,
   getPerformanceDifficulty,
@@ -284,6 +288,12 @@ export async function submitAttemptAction(payload: {
   const correctCount = graded.filter((item) => item.isCorrect).length;
   const score = Math.round((correctCount / graded.length) * 100);
 
+  const [beforeProfile, beforeAttempts, beforeBadges] = await Promise.all([
+    fetchProfile(user.id),
+    fetchAttempts(user.id),
+    fetchUserBadges(user.id)
+  ]);
+
   const result = await createAttempt({
     userId: user.id,
     worksheetId: parsed.data.worksheetId,
@@ -297,6 +307,22 @@ export async function submitAttemptAction(payload: {
       isCorrect: item.isCorrect,
       correctAnswer: item.correctAnswer
     }))
+  });
+
+  const [afterProfile, afterAttempts, afterBadges] = await Promise.all([
+    fetchProfile(user.id),
+    fetchAttempts(user.id),
+    fetchUserBadges(user.id)
+  ]);
+
+  await createNotificationsForAttempt({
+    userId: user.id,
+    beforeAttempts,
+    afterAttempts,
+    beforeLevel: beforeProfile?.level ?? 1,
+    afterLevel: afterProfile?.level ?? 1,
+    beforeBadgeIds: beforeBadges.map((badge) => badge.badge_id),
+    afterBadgeIds: afterBadges.map((badge) => badge.badge_id)
   });
 
   return { ok: true, score: result.score, details: graded };
