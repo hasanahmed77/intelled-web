@@ -36,16 +36,21 @@ export type StaticPracticeCatalog = {
 
 export async function getPerformanceDifficulty(userId: string): Promise<Difficulty> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("worksheet_attempts")
-    .select("score")
-    .eq("user_id", userId);
+  const { data, error } = await supabase
+    .from("user_learning_stats")
+    .select("avg_score, attempt_count")
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  if (!data || data.length === 0) {
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data || (data.attempt_count ?? 0) === 0) {
     return "medium";
   }
 
-  const avg = data.reduce((sum, row) => sum + (row.score ?? 0), 0) / data.length;
+  const avg = Number(data.avg_score ?? 0);
   if (avg >= 80) return "hard";
   if (avg >= 50) return "medium";
   return "easy";
@@ -277,12 +282,20 @@ export async function fetchWorksheets(userId: string, limit = 10, offset = 0) {
   const supabase = await createSupabaseServerClient();
   const { data, count } = await supabase
     .from("worksheets")
-    .select("id, title, topic, difficulty, language, source, created_at", { count: "exact" })
+    .select("id, title, topic, difficulty, language, source, created_at, worksheet_attempts(id)", {
+      count: "exact"
+    })
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
-  return { data: data ?? [], total: count ?? 0 };
+  return {
+    data: (data ?? []).map((worksheet) => ({
+      ...worksheet,
+      done: Array.isArray(worksheet.worksheet_attempts) && worksheet.worksheet_attempts.length > 0
+    })),
+    total: count ?? 0
+  };
 }
 
 export async function fetchWorksheetWithQuestions(userId: string, worksheetId: string) {

@@ -86,8 +86,10 @@ export default async function PricingPage() {
   const planById = new Map(plans.map((plan) => [plan.id, plan]));
   const currentPlan = planById.get(currentPlanId) ?? planById.get("free") ?? null;
 
-  const freeUsed = billing.usage?.free_worksheets_used_lifetime ?? 0;
-  const freeLimit = currentPlan?.lifetime_worksheet_limit ?? 2;
+  const freeStaticUsed = billing.usage?.free_static_problem_sets_used_lifetime ?? 0;
+  const freeAiUsed = billing.usage?.free_ai_problem_sets_used_lifetime ?? 0;
+  const freeStaticLimit = currentPlan?.free_static_problem_sets_lifetime_limit ?? 5;
+  const freeAiLimit = currentPlan?.free_ai_problem_sets_lifetime_limit ?? 2;
   const staticUsed = billing.usage?.period_static_problem_sets_used ?? 0;
   const aiUsed = billing.usage?.period_ai_problem_sets_used ?? 0;
   const staticLimit =
@@ -101,12 +103,12 @@ export default async function PricingPage() {
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-semibold">Premium plans for curated and AI practice.</h1>
           <p className="mx-auto max-w-2xl text-muted">
-            Every account starts on Free with 2 problem sets for life. Choose a plan based on how
-            much guided practice and AI-powered support you want each month.
+            Every account starts on Free with 5 curated sets and 2 AI sets for life. Choose a plan
+            based on how much guided practice and AI-powered support you want each month.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="card p-6">
             <p className="text-sm text-muted">Current plan</p>
             <p className="mt-3 text-2xl font-semibold uppercase">
@@ -115,12 +117,12 @@ export default async function PricingPage() {
           </div>
           <div className="card p-6">
             <p className="text-sm text-muted">
-              {currentPlanId === "free" ? "Free lifetime used" : "Static sets used"}
+              {currentPlanId === "free" ? "Curated sets used" : "Static sets used"}
             </p>
             <p className="mt-3 text-2xl font-semibold">
-              {currentPlanId === "free" ? freeUsed : staticUsed}
+              {currentPlanId === "free" ? freeStaticUsed : staticUsed}
               {currentPlanId === "free"
-                ? ` / ${freeLimit}`
+                ? ` / ${freeStaticLimit}`
                 : staticLimit !== null
                 ? ` / ${staticLimit}`
                 : ""}
@@ -129,14 +131,12 @@ export default async function PricingPage() {
           <div className="card p-6">
             <p className="text-sm text-muted">AI sets used</p>
             <p className="mt-3 text-2xl font-semibold">
-              {currentPlanId === "free" ? "N/A" : aiUsed}
-              {currentPlanId !== "free" && aiLimit !== null ? ` / ${aiLimit}` : ""}
-            </p>
-          </div>
-          <div className="card p-6">
-            <p className="text-sm text-muted">Recurring mode</p>
-            <p className="mt-3 text-2xl font-semibold">
-              {billing.subscription?.auto_renew ? "ON" : "OFF"}
+              {currentPlanId === "free" ? freeAiUsed : aiUsed}
+              {currentPlanId === "free"
+                ? ` / ${freeAiLimit}`
+                : aiLimit !== null
+                ? ` / ${aiLimit}`
+                : ""}
             </p>
           </div>
         </div>

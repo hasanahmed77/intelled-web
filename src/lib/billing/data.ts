@@ -11,9 +11,11 @@ const FALLBACK_PLANS: BillingPlan[] = [
     interval: "free",
     price_bdt: 0,
     duration_days: 0,
+    free_static_problem_sets_lifetime_limit: 5,
+    free_ai_problem_sets_lifetime_limit: 2,
     static_problem_sets_per_period: null,
     ai_problem_sets_per_period: null,
-    lifetime_worksheet_limit: 2,
+    lifetime_worksheet_limit: 7,
     active: true
   },
   {
@@ -22,6 +24,8 @@ const FALLBACK_PLANS: BillingPlan[] = [
     interval: "monthly",
     price_bdt: 149,
     duration_days: 30,
+    free_static_problem_sets_lifetime_limit: null,
+    free_ai_problem_sets_lifetime_limit: null,
     static_problem_sets_per_period: 120,
     ai_problem_sets_per_period: 0,
     lifetime_worksheet_limit: null,
@@ -33,6 +37,8 @@ const FALLBACK_PLANS: BillingPlan[] = [
     interval: "monthly",
     price_bdt: 299,
     duration_days: 30,
+    free_static_problem_sets_lifetime_limit: null,
+    free_ai_problem_sets_lifetime_limit: null,
     static_problem_sets_per_period: 120,
     ai_problem_sets_per_period: 30,
     lifetime_worksheet_limit: null,
@@ -44,6 +50,8 @@ const FALLBACK_PLANS: BillingPlan[] = [
     interval: "yearly",
     price_bdt: 3999,
     duration_days: 365,
+    free_static_problem_sets_lifetime_limit: null,
+    free_ai_problem_sets_lifetime_limit: null,
     static_problem_sets_per_period: 1800,
     ai_problem_sets_per_period: 480,
     lifetime_worksheet_limit: null,
@@ -65,13 +73,15 @@ const FALLBACK_SUBSCRIPTION: UserSubscription = {
 const FALLBACK_USAGE: UsageCounter = {
   user_id: "",
   free_worksheets_used_lifetime: 0,
+  free_static_problem_sets_used_lifetime: 0,
+  free_ai_problem_sets_used_lifetime: 0,
   period_static_problem_sets_used: 0,
   period_ai_problem_sets_used: 0,
   period_anchor: null
 };
 
 const PLAN_SELECT =
-  "id, name, interval, price_bdt, duration_days, static_problem_sets_per_period, ai_problem_sets_per_period, lifetime_worksheet_limit, active";
+  "id, name, interval, price_bdt, duration_days, free_static_problem_sets_lifetime_limit, free_ai_problem_sets_lifetime_limit, static_problem_sets_per_period, ai_problem_sets_per_period, lifetime_worksheet_limit, active";
 
 function isBillingSchemaUnavailable(message: string | undefined) {
   if (!message) {
@@ -153,6 +163,8 @@ async function ensureBillingRows(userId: string) {
     const { error } = await supabase.from("usage_counters").insert({
       user_id: userId,
       free_worksheets_used_lifetime: 0,
+      free_static_problem_sets_used_lifetime: 0,
+      free_ai_problem_sets_used_lifetime: 0,
       period_static_problem_sets_used: 0,
       period_ai_problem_sets_used: 0,
       period_anchor: null
@@ -194,7 +206,7 @@ async function refreshSubscriptionStateDirect(userId: string) {
       supabase
         .from("usage_counters")
         .select(
-          "user_id, free_worksheets_used_lifetime, period_static_problem_sets_used, period_ai_problem_sets_used, period_anchor"
+          "user_id, free_worksheets_used_lifetime, free_static_problem_sets_used_lifetime, free_ai_problem_sets_used_lifetime, period_static_problem_sets_used, period_ai_problem_sets_used, period_anchor"
         )
         .eq("user_id", userId)
         .single()
@@ -490,9 +502,9 @@ export async function activateDummySubscription(
 
   const updateUsageResult = await supabase
     .from("usage_counters")
-    .update({
-      period_anchor: periodStart,
-      period_static_problem_sets_used: 0,
+      .update({
+        period_anchor: periodStart,
+        period_static_problem_sets_used: 0,
       period_ai_problem_sets_used: 0
     })
     .eq("user_id", userId);
@@ -665,18 +677,39 @@ export async function consumeWorksheetCredit(
   }
 
   if (current.subscription.plan_id === "free") {
-    if (current.usage.free_worksheets_used_lifetime >= (plan.lifetime_worksheet_limit ?? 0)) {
+    const lifetimeLimitForSource =
+      source === "static"
+        ? (plan.free_static_problem_sets_lifetime_limit ?? 0)
+        : (plan.free_ai_problem_sets_lifetime_limit ?? 0);
+    const usedLifetimeForSource =
+      source === "static"
+        ? current.usage.free_static_problem_sets_used_lifetime
+        : current.usage.free_ai_problem_sets_used_lifetime;
+
+    if (usedLifetimeForSource >= lifetimeLimitForSource) {
       return {
         ok: false,
         code: "FREE_LIMIT_REACHED",
-        message: "Free plan lifetime limit reached. Upgrade to continue."
+        message:
+          source === "static"
+            ? "Your free curated practice limit has been reached. Upgrade to continue."
+            : "Your free AI practice limit has been reached. Upgrade to continue."
       };
     }
 
     const { error } = await supabase
       .from("usage_counters")
       .update({
-        free_worksheets_used_lifetime: current.usage.free_worksheets_used_lifetime + 1
+        free_worksheets_used_lifetime: current.usage.free_worksheets_used_lifetime + 1,
+        ...(source === "static"
+          ? {
+              free_static_problem_sets_used_lifetime:
+                current.usage.free_static_problem_sets_used_lifetime + 1
+            }
+          : {
+              free_ai_problem_sets_used_lifetime:
+                current.usage.free_ai_problem_sets_used_lifetime + 1
+            })
       })
       .eq("user_id", userId);
 
@@ -687,11 +720,7 @@ export async function consumeWorksheetCredit(
     return {
       ok: true,
       plan: "free",
-      remaining: Math.max(
-        (plan.lifetime_worksheet_limit ?? 0) -
-          (current.usage.free_worksheets_used_lifetime + 1),
-        0
-      )
+      remaining: Math.max(lifetimeLimitForSource - (usedLifetimeForSource + 1), 0)
     };
   }
 
@@ -771,10 +800,20 @@ export async function refundWorksheetCredit(
     const { error } = await supabase
       .from("usage_counters")
       .update({
-        free_worksheets_used_lifetime: Math.max(
-          current.usage.free_worksheets_used_lifetime - 1,
-          0
-        )
+        free_worksheets_used_lifetime: Math.max(current.usage.free_worksheets_used_lifetime - 1, 0),
+        ...(source === "static"
+          ? {
+              free_static_problem_sets_used_lifetime: Math.max(
+                current.usage.free_static_problem_sets_used_lifetime - 1,
+                0
+              )
+            }
+          : {
+              free_ai_problem_sets_used_lifetime: Math.max(
+                current.usage.free_ai_problem_sets_used_lifetime - 1,
+                0
+              )
+            })
       })
       .eq("user_id", userId);
 
