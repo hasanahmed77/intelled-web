@@ -154,7 +154,7 @@ export function StaticPracticeForm({
       }
     }
 
-    return [...groupedTopics.values()]
+    const configuredChoices = [...groupedTopics.values()]
       .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label))
       .map((group) => {
         const matchedTopic = group.aliases.find((topicName) => availableTopics.has(topicName));
@@ -164,6 +164,21 @@ export function StaticPracticeForm({
           available: Boolean(matchedTopic)
         };
       });
+
+    const configuredTopicValues = new Set(
+      configuredTopics.map((entry) => entry.topic)
+    );
+
+    const extraAvailableChoices: TopicChoice[] = [...availableTopics]
+      .filter((topicName) => !configuredTopicValues.has(topicName))
+      .sort((a, b) => a.localeCompare(b))
+      .map((topicName) => ({
+        label: formatTopicLabel(topicName),
+        value: topicName,
+        available: true
+      }));
+
+    return [...configuredChoices, ...extraAvailableChoices];
   }, [educationType, subject, options, topicCatalog]);
 
   useEffect(() => {

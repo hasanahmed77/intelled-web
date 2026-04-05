@@ -96,7 +96,15 @@ values
   ('O Level', 'Mathematics B/D', 'Mensuration', 'Mensuration', 7, true),
   ('O Level', 'Mathematics B/D', 'Vectors and transformation geometry', 'Vectors and transformation geometry', 8, true),
   ('O Level', 'Mathematics B/D', 'Trigonometry', 'Trigonometry', 9, true),
-  ('O Level', 'Mathematics B/D', 'Statistics and probability', 'Statistics and probability', 10, true)
+  ('O Level', 'Mathematics B/D', 'Statistics and probability', 'Statistics and probability', 10, true),
+  ('O Level', 'Physics', 'Forces and motion', 'Forces and motion', 1, true),
+  ('O Level', 'Physics', 'Electricity', 'Electricity', 2, true),
+  ('O Level', 'Physics', 'Waves', 'Waves', 3, true),
+  ('O Level', 'Physics', 'Energy resources and energy transfers', 'Energy resources and energy transfers', 4, true),
+  ('O Level', 'Physics', 'Solids, liquids and gases', 'Solids, liquids and gases', 5, true),
+  ('O Level', 'Physics', 'Magnetism and electromagnetism', 'Magnetism and electromagnetism', 6, true),
+  ('O Level', 'Physics', 'Radioactivity and particles', 'Radioactivity and particles', 7, true),
+  ('O Level', 'Physics', 'Astrophysics', 'Astrophysics', 8, true)
 on conflict (education_type, subject, topic) do update
 set
   display_label = excluded.display_label,

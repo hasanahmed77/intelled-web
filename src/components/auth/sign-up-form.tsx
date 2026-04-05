@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -21,6 +21,10 @@ export function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/practice";
+
+  useEffect(() => {
+    router.prefetch(redirectTo);
+  }, [redirectTo, router]);
 
   const handle = async () => {
     setLoading(true);
@@ -50,8 +54,7 @@ export function SignUpForm() {
       setCaptchaResetKey((value) => value + 1);
     } else {
       if (data.session) {
-        router.push(redirectTo);
-        router.refresh();
+        router.replace(redirectTo);
       } else {
         setVerificationPending(true);
         setMessage(`Check ${email} and verify your email, then log in.`);

@@ -1,5 +1,6 @@
 import { ViewportSection } from "@/components/viewport-section";
 import { FormPendingBar, FormPendingBarButton } from "@/components/form-pending-bar";
+import { refreshPracticeCatalogAction } from "@/app/actions/catalog";
 import {
   approveManualPaymentRequestAction,
   rejectManualPaymentRequestAction
@@ -43,7 +44,9 @@ export default async function AdminPaymentsPage({
 
         {params.status ? (
           <div className="card border-accent/40 bg-accent/10 p-4 text-sm text-zinc-100">
-            Payment request {params.status}.
+            {params.status === "catalog_refreshed"
+              ? "Practice catalog cache refreshed."
+              : `Payment request ${params.status}.`}
           </div>
         ) : null}
 
@@ -65,6 +68,21 @@ export default async function AdminPaymentsPage({
           <div className="card p-6">
             <p className="text-sm text-muted">Reviewed recently</p>
             <p className="mt-3 text-3xl font-semibold">{reviewedRequests.length}</p>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Practice catalog cache</h2>
+              <p className="text-sm text-muted">
+                Refresh this after adding or changing subjects, topics, or curated sets in the database.
+              </p>
+            </div>
+            <form action={refreshPracticeCatalogAction} className="relative min-w-[16rem] overflow-hidden rounded-2xl">
+              <FormPendingBar />
+              <FormPendingBarButton label="Refresh catalog" className="button button-primary w-full" />
+            </form>
           </div>
         </div>
 
