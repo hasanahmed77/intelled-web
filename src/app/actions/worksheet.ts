@@ -22,6 +22,7 @@ import {
   fetchWorksheetAnswerKey,
   fetchWorksheetWithQuestions,
   getPerformanceDifficulty,
+  getStaticTopicDifficulty,
   insertWorksheet
 } from "@/lib/worksheet/data";
 import { gradeAnswers, gradeStaticAnswers } from "@/lib/worksheet/grading";
@@ -111,7 +112,12 @@ export async function generateStaticWorksheetAction(formData: FormData) {
 
   const resolvedDifficulty =
     parsed.data.difficulty === "auto"
-      ? await getPerformanceDifficulty(user.id)
+      ? await getStaticTopicDifficulty({
+          userId: user.id,
+          educationType: parsed.data.educationType,
+          subject: parsed.data.subject,
+          topicKey: parsed.data.topic
+        })
       : (parsed.data.difficulty as Exclude<DifficultySelection, "auto">);
 
   let creditConsumed = false;
@@ -130,7 +136,7 @@ export async function generateStaticWorksheetAction(formData: FormData) {
       userId: user.id,
       educationType: parsed.data.educationType,
       subject: parsed.data.subject,
-      topic: parsed.data.topic,
+      topicKey: parsed.data.topic,
       difficulty: resolvedDifficulty
     });
 
