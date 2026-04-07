@@ -1,11 +1,11 @@
 import { requireUser } from "@/lib/auth";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
 import { fetchProfile, fetchUserLearningStats } from "@/lib/profile/data";
-import { fetchWorksheets } from "@/lib/worksheet/data";
+import { fetchUserTopicMastery, fetchWorksheets } from "@/lib/worksheet/data";
 import { fetchUserBadges, fetchCurrentChallengeProgress } from "@/lib/gamification/data";
 import { getLevelInfo, getCurrentWeekChallenge, BADGE_DEFINITIONS } from "@/lib/gamification/types";
 import { ProfileDashboard } from "@/components/profile-dashboard";
-import type { BadgeItem, WorksheetItem } from "@/components/profile-dashboard";
+import type { BadgeItem, SubjectProgressItem, TopicProgressItem, WorksheetItem } from "@/components/profile-dashboard";
 import type { BillingPlanId } from "@/lib/billing/types";
 
 const VALID_TABS = ["overview", "progress", "badges", "sets", "subscription"] as const;
@@ -16,6 +16,28 @@ const PLAN_DISPLAY_NAME: Record<BillingPlanId, string> = {
   hybrid_monthly: "PLUS",
   hybrid_yearly: "PRO"
 };
+
+const MASTERY_RANK: Record<string, number> = {
+  beginner: 1,
+  avg: 2,
+  great: 3,
+  master: 4
+};
+
+function toTitleCase(value: string) {
+  return value.replace(/[A-Za-z0-9/]+/g, (word) => {
+    if (word.includes("/")) {
+      return word
+        .split("/")
+        .map((part) =>
+          part.length <= 2 ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        )
+        .join("/");
+    }
+
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
+}
 
 export default async function ProfilePage({
   searchParams,
@@ -31,13 +53,14 @@ export default async function ProfilePage({
   const user = await requireUser("/profile");
   const fallbackName = (user.email ?? "user").split("@")[0];
 
-  const [{ data: worksheetData, total: totalWorksheets }, billing, plans, profile, learningStats, userBadges, challengeProgress] =
+  const [{ data: worksheetData, total: totalWorksheets }, billing, plans, profile, learningStats, topicMasteryRows, userBadges, challengeProgress] =
     await Promise.all([
       fetchWorksheets(user.id, PAGE_SIZE, 0),
       getCurrentSubscription(user.id),
       listActivePlans(),
       fetchProfile(user.id),
       fetchUserLearningStats(user.id),
+      fetchUserTopicMastery(user.id),
       fetchUserBadges(user.id),
       fetchCurrentChallengeProgress(user.id),
     ]);
@@ -100,6 +123,57 @@ export default async function ProfilePage({
     done: w.done ?? false,
   }));
 
+  const subjectProgressMap = new Map<
+    string,
+    SubjectProgressItem & { totalRank: number; topicCount: number }
+  >();
+  for (const row of topicMasteryRows) {
+    const subjectKey = `${row.education_type}::${row.subject}`;
+    const topicItem: TopicProgressItem = {
+      topicKey: row.topic_key,
+      displayTopic: row.topic_label,
+      masteryLevel: row.mastery_level,
+      recommendedDifficulty: row.recommended_difficulty,
+      totalAttempts: row.total_attempts,
+      mediumHighScoreCount: row.medium_90_plus_count,
+      hardHighScoreCount: row.hard_90_plus_count,
+      hardPerfectCount: row.hard_100_count
+    };
+
+    const existing = subjectProgressMap.get(subjectKey);
+    if (existing) {
+      existing.topics.push(topicItem);
+      existing.totalRank += MASTERY_RANK[row.mastery_level] ?? row.mastery_rank;
+      existing.topicCount += 1;
+    } else {
+      subjectProgressMap.set(subjectKey, {
+        educationType: row.education_type,
+        subject: row.subject,
+        displaySubject: toTitleCase(row.subject),
+        masteryLevel: row.mastery_level,
+        topics: [topicItem],
+        totalRank: MASTERY_RANK[row.mastery_level] ?? row.mastery_rank,
+        topicCount: 1
+      });
+    }
+  }
+
+  const subjectProgress = [...subjectProgressMap.values()]
+    .map((entry) => {
+      const averageRank = Math.max(1, Math.floor(entry.totalRank / Math.max(entry.topicCount, 1)));
+      const masteryLevel: SubjectProgressItem["masteryLevel"] =
+        averageRank >= 4 ? "master" : averageRank >= 3 ? "great" : averageRank >= 2 ? "avg" : "beginner";
+
+      return {
+        educationType: entry.educationType,
+        subject: entry.subject,
+        displaySubject: entry.displaySubject,
+        masteryLevel,
+      topics: entry.topics.sort((a, b) => a.displayTopic.localeCompare(b.displayTopic))
+      };
+    })
+    .sort((a, b) => a.educationType.localeCompare(b.educationType) || a.displaySubject.localeCompare(b.displaySubject));
+
   return (
     <ProfileDashboard
       initialTab={initialTab}
@@ -121,6 +195,7 @@ export default async function ProfilePage({
       challengeDone={challengeDone}
       challengeCompleted={challengeCompleted}
       challengePct={challengePct}
+      subjectProgress={subjectProgress}
       earnedBadges={earnedBadges}
       lockedBadges={lockedBadges}
       worksheets={worksheetItems}

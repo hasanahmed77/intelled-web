@@ -126,6 +126,61 @@ export type WorksheetItem = {
   done: boolean;
 };
 
+export type TopicProgressItem = {
+  topicKey: string;
+  displayTopic: string;
+  masteryLevel: "beginner" | "avg" | "great" | "master";
+  recommendedDifficulty: "easy" | "medium" | "hard";
+  totalAttempts: number;
+  mediumHighScoreCount: number;
+  hardHighScoreCount: number;
+  hardPerfectCount: number;
+};
+
+export type SubjectProgressItem = {
+  educationType: string;
+  subject: string;
+  displaySubject: string;
+  masteryLevel: "beginner" | "avg" | "great" | "master";
+  topics: TopicProgressItem[];
+};
+
+const MASTERY_STYLES: Record<SubjectProgressItem["masteryLevel"], string> = {
+  beginner: "border-zinc-700 text-zinc-300",
+  avg: "border-sky-500/40 text-sky-300",
+  great: "border-accent/40 text-accent",
+  master: "border-emerald-500/40 text-emerald-300"
+};
+
+function toDisplayDifficulty(value: "easy" | "medium" | "hard") {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getNextMilestone(topic: TopicProgressItem) {
+  if (topic.masteryLevel === "master") {
+    return "Top level reached.";
+  }
+
+  if (topic.masteryLevel === "great") {
+    const remaining = Math.max(5 - topic.hardPerfectCount, 0);
+    return remaining === 1
+      ? "1 more hard perfect score to reach Master."
+      : `${remaining} more hard perfect scores to reach Master.`;
+  }
+
+  if (topic.masteryLevel === "avg") {
+    const remaining = Math.max(3 - topic.hardHighScoreCount, 0);
+    return remaining === 1
+      ? "1 more hard 90%+ score to reach Great."
+      : `${remaining} more hard 90%+ scores to reach Great.`;
+  }
+
+  const remaining = Math.max(3 - topic.mediumHighScoreCount, 0);
+  return remaining === 1
+    ? "1 more medium 90%+ score to reach Avg."
+    : `${remaining} more medium 90%+ scores to reach Avg.`;
+}
+
 function ProblemSetsTab({
   initialWorksheets,
   totalWorksheets,
@@ -306,6 +361,7 @@ export type ProfileDashboardProps = {
   challengeDone: number;
   challengeCompleted: boolean;
   challengePct: number;
+  subjectProgress: SubjectProgressItem[];
   // Badges
   earnedBadges: BadgeItem[];
   lockedBadges: BadgeItem[];
@@ -332,6 +388,7 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
     (props.initialTab as ProfileTab) ?? "overview"
   );
   const remainingDaysLabel = getRemainingDaysLabel(props.periodEnd);
+  const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
 
   const switchTab = useCallback(
     (next: ProfileTab) => {
@@ -340,6 +397,13 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
     },
     [router]
   );
+
+  const toggleSubject = useCallback((subjectKey: string) => {
+    setOpenSubjects((current) => ({
+      ...current,
+      [subjectKey]: !(current[subjectKey] ?? false)
+    }));
+  }, []);
 
   // ── Tab content ──────────────────────────────────────────────
 
@@ -447,6 +511,80 @@ export function ProfileDashboard(props: ProfileDashboardProps) {
               Resets every Monday. Earn the Weekly Warrior badge on completion.
             </p>
           </div>
+        </div>
+
+        <div className="space-y-4">
+          <SectionHeading
+            title="Subject progression"
+            meta="Curated practice topics only"
+          />
+          {props.subjectProgress.length === 0 ? (
+            <div className="card p-8 text-center text-sm text-muted">
+              Start solving curated topic worksheets to build subject progression.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {props.subjectProgress.map((subject) => (
+                <div key={`${subject.educationType}-${subject.subject}`} className="card overflow-hidden p-5 sm:p-6">
+                  <button
+                    type="button"
+                    onClick={() => toggleSubject(`${subject.educationType}-${subject.subject}`)}
+                    className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-muted">{subject.educationType}</p>
+                      <p className="mt-1 text-lg font-semibold">{subject.displaySubject}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs uppercase tracking-widest ${MASTERY_STYLES[subject.masteryLevel]}`}>
+                        {subject.masteryLevel}
+                      </span>
+                      <span className="text-xl text-muted">
+                        {(openSubjects[`${subject.educationType}-${subject.subject}`] ?? false) ? "−" : "+"}
+                      </span>
+                    </div>
+                  </button>
+                  {(openSubjects[`${subject.educationType}-${subject.subject}`] ?? false) ? (
+                    <div className="space-y-3 border-t border-ink-800 pt-4 mt-4">
+                      {subject.topics.map((topic) => (
+                        <div
+                          key={topic.topicKey}
+                          className="flex flex-col gap-3 rounded-2xl border border-ink-800 bg-ink-900/50 p-4"
+                        >
+                          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="space-y-1">
+                              <p className="font-medium">{topic.displayTopic}</p>
+                              <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-widest text-muted">
+                                <span>Current level: {toDisplayDifficulty(topic.recommendedDifficulty)}</span>
+                                <span>
+                                  {topic.totalAttempts} {topic.totalAttempts === 1 ? "attempt" : "attempts"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs text-muted">
+                              <span className={`rounded-full border px-2.5 py-1 ${MASTERY_STYLES[topic.masteryLevel]}`}>
+                                {topic.masteryLevel}
+                              </span>
+                              <span className="rounded-full border border-ink-700 px-2.5 py-1">
+                                Medium 90+: {topic.mediumHighScoreCount}
+                              </span>
+                              <span className="rounded-full border border-ink-700 px-2.5 py-1">
+                                Hard 90+: {topic.hardHighScoreCount}
+                              </span>
+                              <span className="rounded-full border border-ink-700 px-2.5 py-1">
+                                Hard 100: {topic.hardPerfectCount}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-xs italic text-muted">{getNextMilestone(topic)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );

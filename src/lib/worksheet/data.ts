@@ -11,6 +11,7 @@ export type StaticOption = {
   educationType: string;
   subject: string;
   topic: string;
+  topicKey: string;
 };
 
 export type SubjectCatalogEntry = {
@@ -24,6 +25,7 @@ export type TopicCatalogEntry = {
   educationType: string;
   subject: string;
   topic: string;
+  topicKey: string;
   label: string;
   sortOrder: number;
 };
@@ -32,6 +34,24 @@ export type StaticPracticeCatalog = {
   options: StaticOption[];
   subjectCatalog: SubjectCatalogEntry[];
   topicCatalog: TopicCatalogEntry[];
+};
+
+export type UserTopicMasteryRow = {
+  education_type: string;
+  subject: string;
+  topic_key: string;
+  topic_label: string;
+  total_attempts: number;
+  easy_attempts: number;
+  medium_attempts: number;
+  hard_attempts: number;
+  easy_90_plus_count: number;
+  medium_90_plus_count: number;
+  hard_90_plus_count: number;
+  hard_100_count: number;
+  recommended_difficulty: Difficulty;
+  mastery_level: "beginner" | "avg" | "great" | "master";
+  mastery_rank: number;
 };
 
 export async function getPerformanceDifficulty(userId: string): Promise<Difficulty> {
@@ -54,6 +74,49 @@ export async function getPerformanceDifficulty(userId: string): Promise<Difficul
   if (avg >= 80) return "hard";
   if (avg >= 50) return "medium";
   return "easy";
+}
+
+export async function getStaticTopicDifficulty(params: {
+  userId: string;
+  educationType: string;
+  subject: string;
+  topicKey: string;
+}): Promise<Difficulty> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("user_topic_mastery")
+    .select("recommended_difficulty")
+    .eq("user_id", params.userId)
+    .eq("education_type", params.educationType)
+    .eq("subject", params.subject)
+    .eq("topic_key", params.topicKey)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data?.recommended_difficulty as Difficulty | undefined) ?? "easy";
+}
+
+export async function fetchUserTopicMastery(userId: string): Promise<UserTopicMasteryRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("user_topic_mastery")
+    .select(
+      "education_type, subject, topic_key, topic_label, total_attempts, easy_attempts, medium_attempts, hard_attempts, easy_90_plus_count, medium_90_plus_count, hard_90_plus_count, hard_100_count, recommended_difficulty, mastery_level, mastery_rank"
+    )
+    .eq("user_id", userId)
+    .order("education_type", { ascending: true })
+    .order("subject", { ascending: true })
+    .order("mastery_rank", { ascending: false })
+    .order("topic_label", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as UserTopicMasteryRow[];
 }
 
 export async function insertWorksheet(userId: string, worksheet: GeneratedWorksheet) {
@@ -94,7 +157,7 @@ const getCachedStaticQuestionBankOptions = unstable_cache(
   ] = await Promise.all([
     supabase
       .from("static_question_sets")
-      .select("education_type, subject, topic")
+      .select("education_type, subject, topic, topic_key")
       .eq("active", true)
       .order("education_type", { ascending: true })
       .order("subject", { ascending: true })
@@ -108,7 +171,7 @@ const getCachedStaticQuestionBankOptions = unstable_cache(
       .order("display_label", { ascending: true }),
     supabase
       .from("curriculum_topics")
-      .select("education_type, subject, topic, display_label, sort_order")
+      .select("education_type, subject, topic, topic_key, display_label, sort_order")
       .eq("show_in_picker", true)
       .order("education_type", { ascending: true })
       .order("subject", { ascending: true })
@@ -124,7 +187,8 @@ const getCachedStaticQuestionBankOptions = unstable_cache(
     options: (optionRows ?? []).map((row) => ({
       educationType: row.education_type as string,
       subject: row.subject as string,
-      topic: row.topic as string
+      topic: row.topic as string,
+      topicKey: row.topic_key as string
     })),
     subjectCatalog: (subjectCatalogRows ?? []).map((row) => ({
       educationType: row.education_type as string,
@@ -136,6 +200,7 @@ const getCachedStaticQuestionBankOptions = unstable_cache(
       educationType: row.education_type as string,
       subject: row.subject as string,
       topic: row.topic as string,
+      topicKey: row.topic_key as string,
       label: row.display_label as string,
       sortOrder: row.sort_order as number
     }))
@@ -153,16 +218,16 @@ export async function createStaticWorksheetFromBank(params: {
   userId: string;
   educationType: string;
   subject: string;
-  topic: string;
+  topicKey: string;
   difficulty: Difficulty;
 }) {
   const supabase = createSupabaseAdminClient();
   const { data: bankSets, error } = await supabase
     .from("static_question_sets")
-    .select("id, education_type, subject, topic, difficulty, language, variant_index, questions")
+    .select("id, education_type, subject, topic, topic_key, difficulty, language, variant_index, questions")
     .eq("education_type", params.educationType)
     .eq("subject", params.subject)
-    .eq("topic", params.topic)
+    .eq("topic_key", params.topicKey)
     .eq("difficulty", params.difficulty)
     .eq("active", true)
     .order("variant_index", { ascending: true });
@@ -176,6 +241,7 @@ export async function createStaticWorksheetFromBank(params: {
     education_type: string;
     subject: string;
     topic: string;
+    topic_key: string;
     difficulty: Difficulty;
     language: "english" | "bengali";
     variant_index: number;
@@ -192,7 +258,7 @@ export async function createStaticWorksheetFromBank(params: {
     .eq("user_id", params.userId)
     .eq("education_type", params.educationType)
     .eq("subject", params.subject)
-    .eq("topic", params.topic)
+    .eq("topic_key", params.topicKey)
     .eq("language", variants[0].language)
     .eq("difficulty", params.difficulty)
     .maybeSingle();
@@ -225,11 +291,12 @@ export async function createStaticWorksheetFromBank(params: {
     user_id: params.userId,
     education_type: params.educationType,
     subject: params.subject,
-    topic: params.topic,
+    topic: bankSet.topic,
+    topic_key: params.topicKey,
     language: bankSet.language,
     difficulty: params.difficulty,
     next_variant_index: nextVariant.variant_index
-  });
+  }, { onConflict: "user_id,education_type,subject,topic_key,language,difficulty" });
 
   if (progressUpsert.error) {
     throw new Error(progressUpsert.error.message);
@@ -242,6 +309,7 @@ export async function createStaticWorksheetFromBank(params: {
       user_id: params.userId,
       title: `${bankSet.subject}: ${bankSet.topic}`,
       topic: bankSet.topic,
+      topic_key: bankSet.topic_key,
       education_type: bankSet.education_type,
       subject: bankSet.subject,
       difficulty: bankSet.difficulty ?? "medium",

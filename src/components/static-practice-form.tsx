@@ -16,6 +16,7 @@ type StaticOption = {
   educationType: string;
   subject: string;
   topic: string;
+  topicKey: string;
 };
 
 type SubjectCatalogEntry = {
@@ -29,6 +30,7 @@ type TopicCatalogEntry = {
   educationType: string;
   subject: string;
   topic: string;
+  topicKey: string;
   label: string;
   sortOrder: number;
 };
@@ -138,12 +140,12 @@ export function StaticPracticeForm({
         .filter(
           (option) => option.educationType === educationType && option.subject === subject
         )
-        .map((option) => option.topic);
-    const availableTopicsByKey = new Map<string, string>();
-    for (const topicName of availableTopicNames) {
-      const key = normalizeTopicKey(topicName);
+        .map((option) => ({ topic: option.topic, topicKey: option.topicKey }));
+    const availableTopicsByKey = new Map<string, { topic: string; topicKey: string }>();
+    for (const item of availableTopicNames) {
+      const key = normalizeTopicKey(item.topicKey || item.topic);
       if (!availableTopicsByKey.has(key)) {
-        availableTopicsByKey.set(key, topicName);
+        availableTopicsByKey.set(key, item);
       }
     }
 
@@ -160,12 +162,12 @@ export function StaticPracticeForm({
       const key = `${entry.sortOrder}::${entry.label}`;
       const existing = groupedTopics.get(key);
       if (existing) {
-        existing.aliases.push(entry.topic);
+        existing.aliases.push(entry.topicKey, entry.topic, entry.label);
       } else {
         groupedTopics.set(key, {
           label: formatTopicLabel(entry.label),
           sortOrder: entry.sortOrder,
-          aliases: [entry.topic]
+          aliases: [entry.topicKey, entry.topic, entry.label]
         });
       }
     }
@@ -179,7 +181,7 @@ export function StaticPracticeForm({
             .find(Boolean) ?? null;
         return {
           label: group.label,
-          value: matchedTopic ?? group.aliases[0],
+          value: matchedTopic?.topicKey ?? group.aliases[0],
           available: Boolean(matchedTopic)
         };
       });
@@ -187,16 +189,17 @@ export function StaticPracticeForm({
     const configuredTopicValues = new Set<string>();
     for (const entry of configuredTopics) {
       configuredTopicValues.add(normalizeTopicKey(entry.topic));
+      configuredTopicValues.add(normalizeTopicKey(entry.topicKey));
       configuredTopicValues.add(normalizeTopicKey(entry.label));
     }
 
     const extraAvailableChoices: TopicChoice[] = [...availableTopicsByKey.entries()]
       .filter(([topicKey]) => !configuredTopicValues.has(topicKey))
-      .map(([, topicName]) => topicName)
-      .sort((a, b) => a.localeCompare(b))
-      .map((topicName) => ({
-        label: formatTopicLabel(topicName),
-        value: topicName,
+      .map(([, item]) => item)
+      .sort((a, b) => a.topic.localeCompare(b.topic))
+      .map((item) => ({
+        label: formatTopicLabel(item.topic),
+        value: item.topicKey,
         available: true
       }));
 
