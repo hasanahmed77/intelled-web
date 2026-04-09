@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { submitAttemptAction } from "@/app/actions/worksheet";
@@ -55,6 +56,8 @@ export function WorksheetAttemptForm({
   initialAnswers: Record<string, string>;
   initialResult: { score: number; details: Result[] } | null;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isSubmitted, setIsSubmitted] = useState<boolean>(submitted);
   const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [result, setResult] = useState<{ score: number; details: Result[] } | null>(initialResult);
@@ -68,12 +71,44 @@ export function WorksheetAttemptForm({
     initialResult ? getScoreRange(initialResult.score) : "top"
   );
   const scoreRef = useRef<HTMLDivElement>(null);
+  const storageKey = `intelled-attempt:${worksheetId}`;
 
   // Cycle through step messages while evaluating
   useEffect(() => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (submitted || initialResult) {
+      return;
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(storageKey);
+      if (!raw) {
+        return;
+      }
+
+      const cached = JSON.parse(raw) as {
+        answers?: Record<string, string>;
+        submitted?: boolean;
+        result?: { score: number; details: Result[] } | null;
+      };
+
+      if (cached.answers) {
+        setAnswers(cached.answers);
+      }
+      if (cached.submitted) {
+        setIsSubmitted(true);
+      }
+      if (cached.result) {
+        setResult(cached.result);
+      }
+    } catch {
+      window.sessionStorage.removeItem(storageKey);
+    }
+  }, [initialResult, storageKey, submitted]);
 
   useEffect(() => {
     if (!isEvaluating) {
@@ -128,9 +163,19 @@ export function WorksheetAttemptForm({
         return;
       }
 
-      setResult({ score: response.score ?? 0, details: response.details ?? [] });
+      const nextResult = { score: response.score ?? 0, details: response.details ?? [] };
+      setResult(nextResult);
       setIsSubmitted(true);
+      window.sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          answers,
+          submitted: true,
+          result: nextResult
+        })
+      );
       window.dispatchEvent(new CustomEvent("streak-changed"));
+      router.replace(pathname, { scroll: false });
     } finally {
       setIsEvaluating(false);
     }
