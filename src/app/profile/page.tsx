@@ -10,12 +10,22 @@ import type { BillingPlanId } from "@/lib/billing/types";
 
 const VALID_TABS = ["overview", "progress", "badges", "sets", "subscription"] as const;
 const PAGE_SIZE = 10;
-const PLAN_DISPLAY_NAME: Record<BillingPlanId, string> = {
+const PLAN_DISPLAY_NAME: Partial<Record<BillingPlanId, string>> = {
   free: "FREE",
-  static_monthly: "ESSENTIAL",
-  hybrid_monthly: "PLUS",
-  hybrid_yearly: "PRO"
+  curated_essential: "ESSENTIAL",
+  curated_focus: "FOCUS",
+  curated_scholar: "SCHOLAR",
+  ai_spark: "AI SPARK",
+  ai_flow: "AI FLOW",
+  ai_master: "AI MASTER",
+  hybrid_plus: "PLUS",
+  hybrid_pro: "PRO",
+  hybrid_elite: "ELITE"
 };
+
+function getPlanDisplayName(planId: BillingPlanId, fallbackName?: string | null) {
+  return PLAN_DISPLAY_NAME[planId] ?? fallbackName?.toUpperCase() ?? "PLAN";
+}
 
 const MASTERY_RANK: Record<string, number> = {
   beginner: 1,
@@ -202,7 +212,7 @@ export default async function ProfilePage({
       totalWorksheets={totalWorksheets}
       worksheetLimit={worksheetLimit}
       planId={currentPlanId}
-      planName={PLAN_DISPLAY_NAME[currentPlanId]}
+      planName={getPlanDisplayName(currentPlanId, currentPlan?.name)}
       planStatus={billing.subscription?.status ?? "active"}
       periodEnd={billing.subscription?.period_end ?? null}
       freeUsed={freeUsed}

@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { inferQuestionGradingMetadata } from "@/lib/grading/metadata";
+import type { QuestionGradingMetadata } from "@/lib/grading/types";
 import type {
   Difficulty,
   GeneratedWorksheet,
@@ -364,7 +366,8 @@ Rules:
       prompt: normalizeWorksheetPrompt(q.prompt),
       answer: "",
       feedback: "",
-      order: index + 1
+      order: index + 1,
+      grading: inferQuestionGradingMetadata(q.prompt)
     }))
   };
 }
@@ -375,6 +378,7 @@ export async function gradeWorksheetWithOpenAI(params: {
     index: number;
     prompt: string;
     userAnswer: string;
+    grading?: QuestionGradingMetadata;
   }[];
 }) {
   const languageInstruction =
@@ -408,19 +412,31 @@ export async function gradeWorksheetWithOpenAI(params: {
       }
     },
     system:
-      "You are a strict but fair grader. Evaluate each answer using the question prompt and user answer only.",
+      "You are a strict but fair grader. Evaluate each answer using the question prompt and user answer only. Grade semantic correctness, not symbol-purity.",
     user: `Grade each answer and return valid JSON.
 Rules:
 - Preserve each original index
 - If correct: isCorrect=true, feedback="", correctAnswer=""
 - If incorrect: isCorrect=false, feedback may be brief, correctAnswer must contain a concise correct answer
+- Accept keyboard-friendly notation when the meaning is correct
+- Do not mark an answer wrong only because it uses typed words instead of special symbols, Greek letters, operators, arrows, or notation glyphs
+- Treat equivalent notation styles as acceptable when meaning is preserved. Examples: pi vs π, sigma vs σ, x/cross product vs ×, >= vs ≥, -> vs →, plain-text formulas vs symbol-heavy formulas
+- Treat minor case, punctuation, singular/plural, identifier-style, or naming-style differences as acceptable when they clearly refer to the same concept from the prompt
+- Focus on semantic and logical correctness of the answer, not cosmetic notation differences
 - For any mathematical notation in feedback or correctAnswer, use LaTeX delimiters: inline \\( ... \\), block \\[ ... \\]
 - Language: ${params.language}
 - ${languageInstruction}
 - Return JSON only
 
 Data:
-${JSON.stringify(params.questions)}`
+${JSON.stringify(
+  params.questions.map((question) => ({
+    index: question.index,
+    prompt: question.prompt,
+    userAnswer: question.userAnswer,
+    grading: question.grading
+  }))
+)}`
   });
 
   const parsed = gradingSchema.parse(raw);

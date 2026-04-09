@@ -96,9 +96,15 @@ insert into public.billing_plans (
 )
 values
   ('free', 'Free', 'free', 0, 0, null, 5, 2, null, null, 7, true),
-  ('static_monthly', 'Essential', 'monthly', 149, 30, null, null, null, 120, 0, null, true),
-  ('hybrid_monthly', 'Plus', 'monthly', 299, 30, null, null, null, 120, 30, null, true),
-  ('hybrid_yearly', 'Pro', 'yearly', 3999, 365, null, null, null, 1800, 480, null, true)
+  ('curated_essential', 'Essential', 'monthly', 149, 30, null, null, null, 80, 0, null, true),
+  ('curated_focus', 'Focus', 'monthly', 249, 30, null, null, null, 200, 0, null, true),
+  ('curated_scholar', 'Scholar', 'monthly', 449, 30, null, null, null, 360, 0, null, true),
+  ('ai_spark', 'AI Spark', 'monthly', 149, 30, null, null, null, 0, 20, null, true),
+  ('ai_flow', 'AI Flow', 'monthly', 299, 30, null, null, null, 0, 45, null, true),
+  ('ai_master', 'AI Master', 'monthly', 499, 30, null, null, null, 0, 90, null, true),
+  ('hybrid_plus', 'Plus', 'monthly', 249, 30, null, null, null, 90, 15, null, true),
+  ('hybrid_pro', 'Pro', 'monthly', 399, 30, null, null, null, 220, 40, null, true),
+  ('hybrid_elite', 'Elite', 'monthly', 699, 30, null, null, null, 420, 75, null, true)
 on conflict (id) do update
 set
   name = excluded.name,

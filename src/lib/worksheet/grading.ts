@@ -1,3 +1,5 @@
+import { areAnswersEquivalent } from "@/lib/grading/normalize";
+import type { QuestionGradingMetadata } from "@/lib/grading/types";
 import type { WorksheetLanguage } from "@/lib/worksheet/types";
 import { gradeStaticWorksheetWithOpenAI, gradeWorksheetWithOpenAI } from "@/lib/openai";
 
@@ -11,6 +13,7 @@ export async function gradeAnswers(params: {
     index: number;
     prompt: string;
     userAnswer: string;
+    grading?: QuestionGradingMetadata;
   }[];
 }) {
   const results = await gradeWorksheetWithOpenAI({
@@ -18,7 +21,8 @@ export async function gradeAnswers(params: {
     questions: params.questions.map((q) => ({
       index: q.index,
       prompt: q.prompt,
-      userAnswer: q.userAnswer
+      userAnswer: q.userAnswer,
+      grading: q.grading
     }))
   });
 
@@ -31,7 +35,12 @@ export async function gradeAnswers(params: {
     const user = normalize(q.userAnswer);
     const expected = normalize(ai.correctAnswer);
     const sameAnswer = expected.length > 0 && user === expected;
-    const isCorrect = ai.isCorrect || sameAnswer;
+    const semanticallyEquivalent = areAnswersEquivalent({
+      userAnswer: q.userAnswer,
+      correctAnswer: ai.correctAnswer,
+      metadata: q.grading
+    });
+    const isCorrect = ai.isCorrect || sameAnswer || semanticallyEquivalent;
 
     return {
       index: q.index,
@@ -66,7 +75,12 @@ export async function gradeStaticAnswers(params: {
   const unresolved = params.questions.filter((q) => {
     const canonical = normalize(q.correctAnswer);
     const user = normalize(q.userAnswer);
-    const sameAnswer = canonical.length > 0 && user === canonical;
+    const sameAnswer =
+      (canonical.length > 0 && user === canonical) ||
+      areAnswersEquivalent({
+        userAnswer: q.userAnswer,
+        correctAnswer: q.correctAnswer
+      });
 
     if (sameAnswer) {
       resolved.set(q.index, {

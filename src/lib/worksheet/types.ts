@@ -1,3 +1,5 @@
+import type { QuestionGradingMetadata } from "@/lib/grading/types";
+
 export type Difficulty = "easy" | "medium" | "hard";
 export type DifficultySelection = Difficulty | "auto";
 export type WorksheetLanguage = "english" | "bengali";
@@ -47,6 +49,7 @@ export type GeneratedQuestion = {
   answer: string;
   feedback: string;
   order: number;
+  grading?: QuestionGradingMetadata;
 };
 
 export type GeneratedWorksheet = {

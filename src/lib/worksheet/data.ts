@@ -134,7 +134,8 @@ export async function insertWorksheet(userId: string, worksheet: GeneratedWorksh
       questions: worksheet.questions.map((q) => ({
         id: q.id,
         prompt: q.prompt,
-        order: q.order
+        order: q.order,
+        grading: q.grading ?? null
       }))
     })
     .select("id, title, topic, difficulty, language, questions")

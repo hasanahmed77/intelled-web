@@ -1,8 +1,14 @@
 export type BillingPlanId =
   | "free"
-  | "static_monthly"
-  | "hybrid_monthly"
-  | "hybrid_yearly";
+  | "curated_essential"
+  | "curated_focus"
+  | "curated_scholar"
+  | "ai_spark"
+  | "ai_flow"
+  | "ai_master"
+  | "hybrid_plus"
+  | "hybrid_pro"
+  | "hybrid_elite";
 
 export type BillingPlan = {
   id: BillingPlanId;
