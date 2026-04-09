@@ -11,7 +11,17 @@ import {
 } from "@/lib/billing/manual-payments";
 
 const createManualPaymentSchema = z.object({
-  planId: z.enum(["static_monthly", "hybrid_monthly", "hybrid_yearly"]),
+  planId: z.enum([
+    "curated_essential",
+    "curated_focus",
+    "curated_scholar",
+    "ai_spark",
+    "ai_flow",
+    "ai_master",
+    "hybrid_plus",
+    "hybrid_pro",
+    "hybrid_elite"
+  ]),
   payerNumber: z
     .string()
     .trim()

@@ -4,6 +4,7 @@ import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { consumeWorksheetCredit, refundWorksheetCredit } from "@/lib/billing/data";
+import type { QuestionGradingMetadata } from "@/lib/grading/types";
 import { fetchUserBadges } from "@/lib/gamification/data";
 import { createNotificationsForAttempt } from "@/lib/notifications/data";
 import { fetchProfile } from "@/lib/profile/data";
@@ -223,7 +224,12 @@ export async function submitAttemptAction(payload: {
   }
 
   const storedQuestions =
-    (worksheet.questions as { id: string; prompt: string; order: number }[] | null) ?? [];
+    (worksheet.questions as {
+      id: string;
+      prompt: string;
+      order: number;
+      grading?: QuestionGradingMetadata | null;
+    }[] | null) ?? [];
   const indexedQuestions = new Map(storedQuestions.map((question) => [question.order, question]));
 
   if (parsed.data.questions.length !== storedQuestions.length) {
@@ -246,7 +252,8 @@ export async function submitAttemptAction(payload: {
     mergedQuestions.push({
       index: question.index,
       prompt: stored.prompt,
-      userAnswer: question.userAnswer
+      userAnswer: question.userAnswer,
+      grading: stored.grading ?? undefined
     });
   }
 

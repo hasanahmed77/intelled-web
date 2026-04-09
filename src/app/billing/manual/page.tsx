@@ -7,9 +7,15 @@ import { listActivePlans } from "@/lib/billing/data";
 import type { BillingPlanId } from "@/lib/billing/types";
 
 const PLAN_IDS: Exclude<BillingPlanId, "free">[] = [
-  "static_monthly",
-  "hybrid_monthly",
-  "hybrid_yearly"
+  "curated_essential",
+  "curated_focus",
+  "curated_scholar",
+  "ai_spark",
+  "ai_flow",
+  "ai_master",
+  "hybrid_plus",
+  "hybrid_pro",
+  "hybrid_elite"
 ];
 
 type SearchParams = Promise<{
@@ -28,7 +34,7 @@ export default async function ManualBillingPage({
   const plans = await listActivePlans();
   const selectedPlanId = PLAN_IDS.includes(params.planId as Exclude<BillingPlanId, "free">)
     ? (params.planId as Exclude<BillingPlanId, "free">)
-    : "static_monthly";
+    : "hybrid_pro";
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? null;
 
   return (

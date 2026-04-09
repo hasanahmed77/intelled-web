@@ -42,9 +42,15 @@ insert into public.billing_plans (
   active
 )
 values
-  ('static_monthly', 'Essential', 'monthly', 149, 30, null, null, null, 120, 0, null, true),
-  ('hybrid_monthly', 'Plus', 'monthly', 299, 30, null, null, null, 120, 30, null, true),
-  ('hybrid_yearly', 'Pro', 'yearly', 3999, 365, null, null, null, 1800, 480, null, true)
+  ('curated_essential', 'Essential', 'monthly', 149, 30, null, null, null, 80, 0, null, true),
+  ('curated_focus', 'Focus', 'monthly', 249, 30, null, null, null, 200, 0, null, true),
+  ('curated_scholar', 'Scholar', 'monthly', 449, 30, null, null, null, 360, 0, null, true),
+  ('ai_spark', 'AI Spark', 'monthly', 149, 30, null, null, null, 0, 20, null, true),
+  ('ai_flow', 'AI Flow', 'monthly', 299, 30, null, null, null, 0, 45, null, true),
+  ('ai_master', 'AI Master', 'monthly', 499, 30, null, null, null, 0, 90, null, true),
+  ('hybrid_plus', 'Plus', 'monthly', 249, 30, null, null, null, 90, 15, null, true),
+  ('hybrid_pro', 'Pro', 'monthly', 399, 30, null, null, null, 220, 40, null, true),
+  ('hybrid_elite', 'Elite', 'monthly', 699, 30, null, null, null, 420, 75, null, true)
 on conflict (id) do update
 set
   name = excluded.name,
@@ -62,32 +68,35 @@ set
 
 update public.billing_plans
 set active = false
-where id in ('weekly', 'monthly', 'yearly');
+where id in ('weekly', 'monthly', 'yearly', 'static_monthly', 'hybrid_monthly', 'hybrid_yearly');
 
 update public.user_subscriptions
 set
   plan_id = case
-    when plan_id in ('weekly', 'monthly') then 'hybrid_monthly'
-    when plan_id = 'yearly' then 'hybrid_yearly'
+    when plan_id = 'static_monthly' then 'curated_essential'
+    when plan_id in ('weekly', 'monthly', 'hybrid_monthly') then 'hybrid_pro'
+    when plan_id in ('yearly', 'hybrid_yearly') then 'hybrid_elite'
     else plan_id
   end,
   updated_at = now()
-where plan_id in ('weekly', 'monthly', 'yearly');
+where plan_id in ('weekly', 'monthly', 'yearly', 'static_monthly', 'hybrid_monthly', 'hybrid_yearly');
 
 update public.payment_transactions
 set plan_id = case
-  when plan_id in ('weekly', 'monthly') then 'hybrid_monthly'
-  when plan_id = 'yearly' then 'hybrid_yearly'
+  when plan_id = 'static_monthly' then 'curated_essential'
+  when plan_id in ('weekly', 'monthly', 'hybrid_monthly') then 'hybrid_pro'
+  when plan_id in ('yearly', 'hybrid_yearly') then 'hybrid_elite'
   else plan_id
 end
-where plan_id in ('weekly', 'monthly', 'yearly');
+where plan_id in ('weekly', 'monthly', 'yearly', 'static_monthly', 'hybrid_monthly', 'hybrid_yearly');
 
 update public.subscription_events
 set plan_id = case
-  when plan_id in ('weekly', 'monthly') then 'hybrid_monthly'
-  when plan_id = 'yearly' then 'hybrid_yearly'
+  when plan_id = 'static_monthly' then 'curated_essential'
+  when plan_id in ('weekly', 'monthly', 'hybrid_monthly') then 'hybrid_pro'
+  when plan_id in ('yearly', 'hybrid_yearly') then 'hybrid_elite'
   else plan_id
 end
-where plan_id in ('weekly', 'monthly', 'yearly');
+where plan_id in ('weekly', 'monthly', 'yearly', 'static_monthly', 'hybrid_monthly', 'hybrid_yearly');
 
 commit;
