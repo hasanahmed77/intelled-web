@@ -3,6 +3,7 @@ import { ViewportSection } from "@/components/viewport-section";
 import { FormPendingBar, FormPendingBarButton } from "@/components/form-pending-bar";
 import { submitManualPaymentRequestAction } from "@/app/actions/manual-billing";
 import { requireUser } from "@/lib/auth";
+import { isManualBillingEnabled } from "@/lib/billing/config";
 import { listActivePlans } from "@/lib/billing/data";
 import type { BillingPlanId } from "@/lib/billing/types";
 
@@ -30,12 +31,27 @@ export default async function ManualBillingPage({
   searchParams: SearchParams;
 }) {
   await requireUser("/pricing");
+  const paymentsEnabled = isManualBillingEnabled();
   const params = await searchParams;
   const plans = await listActivePlans();
   const selectedPlanId = PLAN_IDS.includes(params.planId as Exclude<BillingPlanId, "free">)
     ? (params.planId as Exclude<BillingPlanId, "free">)
     : "hybrid_pro";
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? null;
+
+  if (!paymentsEnabled) {
+    return (
+      <ViewportSection center>
+        <div className="card w-full max-w-3xl space-y-4 p-8 text-center">
+          <p className="text-sm uppercase tracking-[0.22em] text-accent">Payments unavailable</p>
+          <h1 className="text-4xl font-semibold">Checkout is temporarily disabled.</h1>
+          <p className="mx-auto max-w-2xl text-muted">
+            We have turned off plan checkout for now. As soon as payments are enabled again, this page will show the active purchase flow.
+          </p>
+        </div>
+      </ViewportSection>
+    );
+  }
 
   return (
     <ViewportSection center>
