@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ViewportSection } from "@/components/viewport-section";
 import { getUser } from "@/lib/auth";
+import { isManualBillingEnabled } from "@/lib/billing/config";
 import { getCurrentSubscription, listActivePlans } from "@/lib/billing/data";
 import type { BillingPlanId } from "@/lib/billing/types";
 
@@ -205,6 +206,7 @@ function getPlanDisplayName(planId: BillingPlanId, fallbackName?: string | null)
 
 export default async function PricingPage() {
   const user = await getUser();
+  const paymentsEnabled = isManualBillingEnabled();
   const plans = await listActivePlans().catch(() => []);
   const billing = user
     ? await getCurrentSubscription(user.id).catch(() => ({ subscription: null, usage: null }))
@@ -316,7 +318,8 @@ export default async function PricingPage() {
                       ))}
                     </ul>
 
-                    {user ? (
+                    {paymentsEnabled ? (
+                    user ? (
                       isCurrent ? (
                         <button type="button" className="button mt-auto cursor-default opacity-80" disabled>
                           Current plan
@@ -341,6 +344,19 @@ export default async function PricingPage() {
                       >
                         Sign in to pay
                       </Link>
+                    )) : (
+                      <div className="mt-auto space-y-3">
+                        <button
+                          type="button"
+                          className="button w-full cursor-not-allowed border-ink-700/60 bg-ink-900/80 text-zinc-400 opacity-80"
+                          disabled
+                        >
+                          Payments temporarily unavailable
+                        </button>
+                        <p className="text-center text-xs text-muted">
+                          Plan checkout is currently disabled.
+                        </p>
+                      </div>
                     )}
                   </div>
                 );

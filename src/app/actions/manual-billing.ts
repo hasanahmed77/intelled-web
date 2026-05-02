@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdminUser, requireUser } from "@/lib/auth";
+import { isManualBillingEnabled } from "@/lib/billing/config";
 import {
   approveManualPaymentRequest,
   rejectManualPaymentRequest,
@@ -42,6 +43,10 @@ const reviewManualPaymentSchema = z.object({
 
 export async function submitManualPaymentRequestAction(formData: FormData) {
   const user = await requireUser("/pricing");
+
+  if (!isManualBillingEnabled()) {
+    redirect("/billing/manual?error=Payments%20are%20temporarily%20unavailable.");
+  }
 
   const parsed = createManualPaymentSchema.safeParse({
     planId: formData.get("planId"),
